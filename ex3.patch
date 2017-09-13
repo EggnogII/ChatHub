@@ -1,0 +1,153 @@
+diff --git a/app/src/main/java/edu/sfsu/csc780/chathub/MainActivity.java b/app/src/main/java/edu/sfsu/csc780/chathub/MainActivity.java
+index f54bc42..6f7cfcf 100644
+--- a/app/src/main/java/edu/sfsu/csc780/chathub/MainActivity.java
++++ b/app/src/main/java/edu/sfsu/csc780/chathub/MainActivity.java
+@@ -15,6 +15,7 @@
+  */
+ package edu.sfsu.csc780.chathub;
+ 
++import android.content.Intent;
+ import android.content.SharedPreferences;
+ import android.os.Bundle;
+ import android.preference.PreferenceManager;
+@@ -40,6 +41,8 @@ import android.widget.Toast;
+ import com.google.android.gms.auth.api.Auth;
+ import com.google.android.gms.common.ConnectionResult;
+ import com.google.android.gms.common.api.GoogleApiClient;
++import com.google.firebase.auth.FirebaseAuth;
++import com.google.firebase.auth.FirebaseUser;
+ 
+ import de.hdodenhof.circleimageview.CircleImageView;
+ 
+@@ -76,6 +79,8 @@ public class MainActivity extends AppCompatActivity
+     private EditText mMessageEditText;
+ 
+     // Firebase instance variables
++    private FirebaseAuth mAuth;
++    private FirebaseUser mUser;
+ 
+     @Override
+     protected void onCreate(Bundle savedInstanceState) {
+@@ -85,6 +90,22 @@ public class MainActivity extends AppCompatActivity
+         // Set default username is anonymous.
+         mUsername = ANONYMOUS;
+         //Initialize Auth
++        mAuth = FirebaseAuth.getInstance();
++        mUser = mAuth.getCurrentUser();
++        if (mUser == null)
++        {
++            startActivity(new Intent(this, SignInActivity.class));
++            finish();
++            return;
++        }
++        else
++        {
++            mUsername = mUser.getDisplayName();
++            if (mUser.getPhotoUrl() != null)
++            {
++                mPhotoUrl = mUser.getPhotoUrl().toString();
++            }
++        }
+ 
+         mGoogleApiClient = new GoogleApiClient.Builder(this)
+                 .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
+@@ -161,7 +182,19 @@ public class MainActivity extends AppCompatActivity
+ 
+     @Override
+     public boolean onOptionsItemSelected(MenuItem item) {
+-        return super.onOptionsItemSelected(item);
++        switch (item.getItemId())
++        {
++            case R.id.sign_out_menu:
++                mAuth.signOut();
++            Auth.GoogleSignInApi.signOut(mGoogleApiClient);
++                mUsername = ANONYMOUS;
++                startActivity(new Intent(this, SignInActivity.class));
++                return true;
++            default:
++                return super.onOptionsItemSelected(item);
++
++        }
++
+     }
+ 
+     @Override
+diff --git a/app/src/main/java/edu/sfsu/csc780/chathub/SignInActivity.java b/app/src/main/java/edu/sfsu/csc780/chathub/SignInActivity.java
+index 5a0bf59..6dcf299 100644
+--- a/app/src/main/java/edu/sfsu/csc780/chathub/SignInActivity.java
++++ b/app/src/main/java/edu/sfsu/csc780/chathub/SignInActivity.java
+@@ -26,6 +26,7 @@ import android.widget.Toast;
+ import com.google.android.gms.auth.api.Auth;
+ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
++import com.google.android.gms.auth.api.signin.GoogleSignInResult;
+ import com.google.android.gms.common.ConnectionResult;
+ import com.google.android.gms.common.SignInButton;
+ import com.google.android.gms.common.api.GoogleApiClient;
+@@ -72,12 +73,20 @@ public class SignInActivity extends AppCompatActivity implements
+ 
+         // Initialize FirebaseAuth
+         //Initialize Auth
++        mAuth = FirebaseAuth.getInstance();
++    }
++
++    private void signIn()
++    {
++        Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
++        startActivityForResult(signInIntent, RC_SIGN_IN);
+     }
+ 
+     @Override
+     public void onClick(View v) {
+         switch (v.getId()) {
+             case R.id.sign_in_button:
++                signIn();
+                 break;
+         }
+     }
+@@ -94,6 +103,21 @@ public class SignInActivity extends AppCompatActivity implements
+     public void onActivityResult(int requestCode, int resultCode, Intent data) {
+         super.onActivityResult(requestCode, resultCode, data);
+         // Handle the result of the sign-in activity
++        if (requestCode == RC_SIGN_IN)
++        {
++            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
++            if (result.isSuccess())
++            {
++                //SUCCESS, auth with Firebase
++                GoogleSignInAccount account = result.getSignInAccount();
++                firebaseAuthWithGoogle(account);
++            }
++            else
++            {
++                //Failure
++                Log.e(TAG, "Google Sign in failure");
++            }
++        }
+     }
+ 
+     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+@@ -103,6 +127,20 @@ public class SignInActivity extends AppCompatActivity implements
+                     @Override
+                     public void onComplete(@NonNull Task<AuthResult> task) {
+                         // Process the auth task result
++                        Log.d(TAG, "signInWithCredential:onComplete:" + task.isSuccessful());
++                        //If sign in fails, display message to user
++                        //If sign in succeeds, start MainActivity
++                        if (!task.isSuccessful())
++                        {
++                            Log.w(TAG, "signInWithCredential" + task.getException());
++                            Toast.makeText(SignInActivity.this, "Authentication failed", Toast.LENGTH_SHORT).show();
++
++                        }
++                        else
++                        {
++                            startActivity(new Intent(SignInActivity.this, MainActivity.class));
++                            finish();
++                        }
+                     }
+                 });
+     }
+diff --git a/exercise3.patch b/exercise3.patch
+deleted file mode 100644
+index e69de29..0000000
