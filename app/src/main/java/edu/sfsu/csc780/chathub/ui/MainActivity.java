@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.sfsu.csc780.chathub;
+package edu.sfsu.csc780.chathub.ui;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -32,12 +32,12 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -45,22 +45,13 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import edu.sfsu.csc780.chathub.R;
+import edu.sfsu.csc780.chathub.model.ChatMessage;
+import edu.sfsu.csc780.chathub.ui.SignInActivity;
 
 public class MainActivity extends AppCompatActivity
-        implements GoogleApiClient.OnConnectionFailedListener {
-
-    public static class MessageViewHolder extends RecyclerView.ViewHolder {
-        public TextView messageTextView;
-        public TextView messengerTextView;
-        public CircleImageView messengerImageView;
-
-        public MessageViewHolder(View v) {
-            super(v);
-            messageTextView = (TextView) itemView.findViewById(R.id.messageTextView);
-            messengerTextView = (TextView) itemView.findViewById(R.id.messengerTextView);
-            messengerImageView = (CircleImageView) itemView.findViewById(R.id.messengerImageView);
-        }
-    }
+        implements GoogleApiClient.OnConnectionFailedListener,
+        MessageUtil.MessageLoadListener {
 
     private static final String TAG = "MainActivity";
     public static final String MESSAGES_CHILD = "messages";
@@ -82,6 +73,9 @@ public class MainActivity extends AppCompatActivity
     private FirebaseAuth mAuth;
     private FirebaseUser mUser;
 
+    //Adapter
+    private FirebaseRecyclerAdapter<ChatMessage, MessageUtil.MessageViewHolder> mFirebaseAdapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -92,21 +86,16 @@ public class MainActivity extends AppCompatActivity
         //Initialize Auth
         mAuth = FirebaseAuth.getInstance();
         mUser = mAuth.getCurrentUser();
-        if (mUser == null)
-        {
+        if (mUser == null) {
             startActivity(new Intent(this, SignInActivity.class));
             finish();
             return;
-        }
-        else
-        {
+        } else {
             mUsername = mUser.getDisplayName();
-            if (mUser.getPhotoUrl() != null)
-            {
+            if (mUser.getPhotoUrl() != null) {
                 mPhotoUrl = mUser.getPhotoUrl().toString();
             }
         }
-
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
                 .addApi(Auth.GOOGLE_SIGN_IN_API)
@@ -142,13 +131,32 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        mFirebaseAdapter = MessageUtil.getFirebaseAdapter(this,
+                this, /*MessageLoadListener */
+                mLinearLayoutManager,
+                mMessageRecyclerView);
+
+        mMessageRecyclerView.setAdapter(mFirebaseAdapter);
+
         mSendButton = (FloatingActionButton) findViewById(R.id.sendButton);
         mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
                 // Send messages on click.
+                mMessageRecyclerView.scrollToPosition(0);
+                ChatMessage chatMessage = new ChatMessage(mMessageEditText.getText().toString(),
+                        mUsername,
+                        mPhotoUrl);
+                MessageUtil.send(chatMessage);
+                mMessageEditText.setText("");
             }
         });
+    }
+
+    @Override
+    public void onLoadComplete() {
+        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
     }
 
     @Override
@@ -182,19 +190,16 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId())
-        {
+        switch (item.getItemId()) {
             case R.id.sign_out_menu:
                 mAuth.signOut();
-            Auth.GoogleSignInApi.signOut(mGoogleApiClient);
+                Auth.GoogleSignInApi.signOut(mGoogleApiClient);
                 mUsername = ANONYMOUS;
                 startActivity(new Intent(this, SignInActivity.class));
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
-
         }
-
     }
 
     @Override
