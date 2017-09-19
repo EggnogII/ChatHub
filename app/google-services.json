@@ -1,35 +1,35 @@
 {
   "project_info": {
-    "project_number": "277585240120",
-    "firebase_url": "https://chathub-735fe.firebaseio.com",
-    "project_id": "chathub-735fe",
-    "storage_bucket": "chathub-735fe.appspot.com"
+    "project_number": "",
+    "firebase_url": "",
+    "project_id": "",
+    "storage_bucket": ""
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:277585240120:android:123c68aba501e686",
+        "mobilesdk_app_id": "",
         "android_client_info": {
           "package_name": "edu.sfsu.csc780.chathub"
         }
       },
       "oauth_client": [
         {
-          "client_id": "277585240120-n2nbd6hpgd8tdp89moqpd64i3kapao47.apps.googleusercontent.com",
+          "client_id": "",
           "client_type": 1,
           "android_info": {
             "package_name": "edu.sfsu.csc780.chathub",
-            "certificate_hash": "1c6340418dfc7cb822617c97376d2d415e3be284"
+            "certificate_hash": ""
           }
         },
         {
-          "client_id": "277585240120-1v3396cdctulfpk6769trefs2fia4eu4.apps.googleusercontent.com",
+          "client_id": "",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBHHi7oBoTSmwpqvnOwLzB4ZhJxTutQThA"
+          "current_key": ""
         }
       ],
       "services": {
@@ -40,7 +40,7 @@
           "status": 2,
           "other_platform_oauth_client": [
             {
-              "client_id": "277585240120-1v3396cdctulfpk6769trefs2fia4eu4.apps.googleusercontent.com",
+              "client_id": "",
               "client_type": 3
             }
           ]

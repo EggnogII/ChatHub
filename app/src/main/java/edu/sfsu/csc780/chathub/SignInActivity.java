@@ -74,11 +74,12 @@ public class SignInActivity extends AppCompatActivity implements
         // Initialize FirebaseAuth
         //Initialize Auth
         mAuth = FirebaseAuth.getInstance();
+
     }
 
-    private void signIn()
-    {
-        Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
+    private void signIn() {
+        Intent signInIntent =
+                Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
         startActivityForResult(signInIntent, RC_SIGN_IN);
     }
 
@@ -103,19 +104,14 @@ public class SignInActivity extends AppCompatActivity implements
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         // Handle the result of the sign-in activity
-        if (requestCode == RC_SIGN_IN)
-        {
+        if (requestCode == RC_SIGN_IN) {
             GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
-            if (result.isSuccess())
-            {
-                //SUCCESS, auth with Firebase
+            if (result.isSuccess()) {
+                // successful, now authenticate with Firebase
                 GoogleSignInAccount account = result.getSignInAccount();
                 firebaseAuthWithGoogle(account);
-            }
-            else
-            {
-                //Failure
-                Log.e(TAG, "Google Sign in failure");
+            } else {
+                Log.e(TAG, "Google Sign In failed.");
             }
         }
     }
@@ -128,19 +124,17 @@ public class SignInActivity extends AppCompatActivity implements
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         // Process the auth task result
                         Log.d(TAG, "signInWithCredential:onComplete:" + task.isSuccessful());
-                        //If sign in fails, display message to user
-                        //If sign in succeeds, start MainActivity
-                        if (!task.isSuccessful())
-                        {
-                            Log.w(TAG, "signInWithCredential" + task.getException());
-                            Toast.makeText(SignInActivity.this, "Authentication failed", Toast.LENGTH_SHORT).show();
-
-                        }
-                        else
-                        {
+                        // If sign in fails, display a message to the user.
+                        // If sign in succeeds, start MainActivity and finish this activity
+                        if (!task.isSuccessful()) {
+                            Log.w(TAG, "signInWithCredential", task.getException());
+                            Toast.makeText(SignInActivity.this, "Authentication failed.",
+                                    Toast.LENGTH_SHORT).show();
+                        } else {
                             startActivity(new Intent(SignInActivity.this, MainActivity.class));
                             finish();
                         }
+
                     }
                 });
     }

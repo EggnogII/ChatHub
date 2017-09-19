@@ -92,21 +92,16 @@ public class MainActivity extends AppCompatActivity
         //Initialize Auth
         mAuth = FirebaseAuth.getInstance();
         mUser = mAuth.getCurrentUser();
-        if (mUser == null)
-        {
+        if (mUser == null) {
             startActivity(new Intent(this, SignInActivity.class));
             finish();
             return;
-        }
-        else
-        {
+        } else {
             mUsername = mUser.getDisplayName();
-            if (mUser.getPhotoUrl() != null)
-            {
+            if (mUser.getPhotoUrl() != null) {
                 mPhotoUrl = mUser.getPhotoUrl().toString();
             }
         }
-
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
                 .addApi(Auth.GOOGLE_SIGN_IN_API)
@@ -182,19 +177,16 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId())
-        {
+        switch (item.getItemId()) {
             case R.id.sign_out_menu:
                 mAuth.signOut();
-            Auth.GoogleSignInApi.signOut(mGoogleApiClient);
+                Auth.GoogleSignInApi.signOut(mGoogleApiClient);
                 mUsername = ANONYMOUS;
                 startActivity(new Intent(this, SignInActivity.class));
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
-
         }
-
     }
 
     @Override
