@@ -1,9 +1,12 @@
 package edu.sfsu.csc780.chathub.ui;
 
+import android.app.Activity;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.TextView;
 
+import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -20,7 +23,8 @@ public class MessageUtil
 {
     private static final String LOG_TAG = MessageUtil.class.getSimpleName();
     public static final String MESSAGES_CHILD = "messages";
-    private static DatabaseReference sFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
+    private static DatabaseReference sFirebaseDatabaseReference =
+            FirebaseDatabase.getInstance().getReference();
 
     private static MessageLoadListener sAdapterListener;
     private static FirebaseAuth sFirebaseAuth;
@@ -30,6 +34,32 @@ public class MessageUtil
     {
         sFirebaseDatabaseReference.child(MESSAGES_CHILD).push().setValue(chatMessage);
     }
+
+    //Add a static method to make RecyclerViewAdapter
+
+    public static FirebaseRecyclerAdapter getFirebaseAdapter(final Activity activity,
+                                                             MessageLoadListener listener,
+                                                             final LinearLayoutManager linearManager
+                                                            final RecyclerView recyclerView)
+    {
+        sAdapterListener = listener;
+
+        final FirebaseRecyclerAdapter adapter = new FirebaseRecyclerAdapter<ChatMessage,
+                MessageViewHolder>(
+                    ChatMessage.class,
+                    R.layout.item_message,
+                    MessageViewHolder.class,
+                    sFirebaseDatabaseReference.child(MESSAGES_CHILD)){
+            @Override
+            protected voidpopulateViewHolder(final MessageViewHolder viewHolder,
+                                             ChatMessage chatMessage, int position)
+            {
+                //more TODO
+            }
+        };
+        return adapter;
+    }
+    //End Recycler
 }
 
 public static class MessageViewHolder extends RecyclerView.ViewHolder
@@ -45,4 +75,5 @@ public static class MessageViewHolder extends RecyclerView.ViewHolder
         messengerTextView = (TextView) itemView.findViewById(R.id.messengerTextView);
         messengerImageView = (CircleImageView) itemView.findViewById(R.id.messengerImageView);
     }
+
 }
