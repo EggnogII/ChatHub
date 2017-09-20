@@ -35,6 +35,7 @@ public class MessageUtil
     private static FirebaseAuth sFirebaseAuth;
 
     public interface MessageLoadListener {public void onLoadComplete();}
+
     public static void send(ChatMessage chatMessage)
     {
         sFirebaseDatabaseReference.child(MESSAGES_CHILD).push().setValue(chatMessage);
@@ -44,7 +45,7 @@ public class MessageUtil
 
     public static FirebaseRecyclerAdapter getFirebaseAdapter(final Activity activity,
                                                              MessageLoadListener listener,
-                                                             final LinearLayoutManager linearManager
+                                                             final LinearLayoutManager linearManager,
                                                             final RecyclerView recyclerView)
     {
         sAdapterListener = listener;
@@ -54,73 +55,84 @@ public class MessageUtil
                     ChatMessage.class,
                     R.layout.item_message,
                     MessageViewHolder.class,
-                    sFirebaseDatabaseReference.child(MESSAGES_CHILD)){
-            @Override
-            protected voidpopulateViewHolder(final MessageViewHolder viewHolder,
-                                             ChatMessage chatMessage, int position)
-            {
-                //more TODO
-                sAdapterListener.onLoadComplete();
-
-                viewHolder.messageTextView.setText(chatMessage.getText());
-                viewHolder.messengerTextView.setText(chatMessage.getName());
-                if (chatMessage.getPhotoUrl() == null)
+                    sFirebaseDatabaseReference.child(MESSAGES_CHILD))
                 {
-                    viewHolder.messengerImageView.setImageDrawable(ContextCompat.
-                            getDrawable(activity, R.drawable.ic_account_circle_black_36dp));
-                }
-                else
-                {
-                    SimpleTarget target = new SimpleTarget<Bitmap>()
+                    @Override
+                    protected void populateViewHolder(final MessageViewHolder viewHolder,
+                                                    ChatMessage chatMessage, int position)
                     {
-                        @Override
-                        public void onResourceReady(Bitmap bitmap, GlideAnimation glideAnimation)
+                        //more TODO
+                        sAdapterListener.onLoadComplete();
+
+                        viewHolder.messageTextView.setText(chatMessage.getText());
+                        viewHolder.messengerTextView.setText(chatMessage.getName());
+
+                        if (chatMessage.getPhotoUrl() == null)
                         {
-                            viewHolder.messengerImageView.setImageBitmap(bitmap);
+                            viewHolder.messengerImageView
+                                    .setImageDrawable(ContextCompat
+                                    .getDrawable(activity,
+                                            R.drawable.ic_account_circle_black_36dp));
                         }
-                    };
 
-                    Glide.with(activity)
-                            .load(chatMessage.getPhotoUrl())
-                            .asBitmap()
-                            .into(target);
-                }
-            }
-        };
-        adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver()
-        {
-            @Override
-            public void onItemRangeInserted(int positionStart, int itemCount)
+                       else
+                        {
+                            SimpleTarget target = new SimpleTarget<Bitmap>()
+                            {
+                                @Override
+                                public void onResourceReady(Bitmap bitmap, GlideAnimation glideAnimation)
+                                {
+                                    viewHolder.messengerImageView.setImageBitmap(bitmap);
+                                }
+                            };
+
+                        Glide.with(activity)
+                                .load(chatMessage
+                                .getPhotoUrl())
+                                .asBitmap()
+                                .into(target);
+                        }
+                    } //End populateViewHolder
+                }; //End Firebase Recycler Adapter creation
+
+            adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver()
             {
-                super.onItemRangeInserted(positionStart, itemCount);
-                int messageCount = adapter.getItemCount();
-                int lastVisiblePosition = linearManager.findLastCompletelyVisibleItemPosition();
+                @Override
+                public void onItemRangeInserted(int positionStart, int itemCount)
+                {
+                    super.onItemRangeInserted(positionStart, itemCount);
+                    int messageCount = adapter.getItemCount();
+                    int lastVisiblePosition = linearManager.findLastCompletelyVisibleItemPosition();
 
-                if (lastVisiblePosition == -1 ||
+                    if (lastVisiblePosition == -1 ||
                         (positionStart >= (messageCount -1) &&
                                 lastVisiblePosition == (positionStart -1)))
-                {
-                    recyclerView.scrollToPosition(positionStart);
+                    {
+                        recyclerView.scrollToPosition(positionStart);
+                    }
                 }
-            }
-        });
+            });
+
         return adapter;
     }
     //End Recycler
-}
 
-public static class MessageViewHolder extends RecyclerView.ViewHolder
-{
-    public TextView messageTextView;
-    public TextView messengerTextView;
-    public CircleImageView messengerImageView;
-
-    public MessageViewHolder(View v)
+    public static class MessageViewHolder extends RecyclerView.ViewHolder
     {
-        super(v);
-        messageTextView = (TextView) itemView.findViewById(R.id.messageTextView);
-        messengerTextView = (TextView) itemView.findViewById(R.id.messengerTextView);
-        messengerImageView = (CircleImageView) itemView.findViewById(R.id.messengerImageView);
+        public TextView messageTextView;
+        public TextView messengerTextView;
+        public CircleImageView messengerImageView;
+
+        public MessageViewHolder(View v)
+        {
+            super(v);
+            messageTextView = (TextView) itemView.findViewById(R.id.messageTextView);
+            messengerTextView = (TextView) itemView.findViewById(R.id.messengerTextView);
+            messengerImageView = (CircleImageView) itemView.findViewById(R.id.messengerImageView);
+        }
+
     }
 
 }
+
+

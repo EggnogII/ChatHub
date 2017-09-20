@@ -37,6 +37,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -45,10 +46,12 @@ import com.google.firebase.auth.FirebaseUser;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import edu.sfsu.csc780.chathub.R;
+import edu.sfsu.csc780.chathub.model.ChatMessage;
 import edu.sfsu.csc780.chathub.ui.SignInActivity;
 
 public class MainActivity extends AppCompatActivity
-        implements GoogleApiClient.OnConnectionFailedListener {
+        implements GoogleApiClient.OnConnectionFailedListener,
+        MessageUtil.MessageLoadListener {
 
     private static final String TAG = "MainActivity";
     public static final String MESSAGES_CHILD = "messages";
@@ -69,6 +72,9 @@ public class MainActivity extends AppCompatActivity
     // Firebase instance variables
     private FirebaseAuth mAuth;
     private FirebaseUser mUser;
+
+    //Adapter
+    private FirebaseRecyclerAdapter<ChatMessage, MessageUtil.MessageViewHolder> mFirebaseAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,13 +131,32 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        mFirebaseAdapter = MessageUtil.getFirebaseAdapter(this,
+                this, /*MessageLoadListener */
+                mLinearLayoutManager,
+                mMessageRecyclerView);
+
+        mMessageRecyclerView.setAdapter(mFirebaseAdapter);
+
         mSendButton = (FloatingActionButton) findViewById(R.id.sendButton);
         mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
                 // Send messages on click.
+                mMessageRecyclerView.scrollToPosition(0);
+                ChatMessage chatMessage = new ChatMessage(mMessageEditText.getText().toString(),
+                        mUsername,
+                        mPhotoUrl);
+                MessageUtil.send(chatMessage);
+                mMessageEditText.setText("");
             }
         });
+    }
+
+    @Override
+    public void onLoadComplete() {
+        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
     }
 
     @Override
