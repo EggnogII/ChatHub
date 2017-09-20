@@ -1,11 +1,16 @@
 package edu.sfsu.csc780.chathub.ui;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
@@ -55,6 +60,31 @@ public class MessageUtil
                                              ChatMessage chatMessage, int position)
             {
                 //more TODO
+                sAdapterListener.onLoadComplete();
+
+                viewHolder.messageTextView.setText(chatMessage.getText());
+                viewHolder.messengerTextView.setText(chatMessage.getName());
+                if (chatMessage.getPhotoUrl() == null)
+                {
+                    viewHolder.messengerImageView.setImageDrawable(ContextCompat.
+                            getDrawable(activity, R.drawable.ic_account_circle_black_36dp));
+                }
+                else
+                {
+                    SimpleTarget target = new SimpleTarget<Bitmap>()
+                    {
+                        @Override
+                        public void onResourceReady(Bitmap bitmap, GlideAnimation glideAnimation)
+                        {
+                            viewHolder.messengerImageView.setImageBitmap(bitmap);
+                        }
+                    };
+
+                    Glide.with(activity)
+                            .load(chatMessage.getPhotoUrl())
+                            .asBitmap()
+                            .into(target);
+                }
             }
         };
         return adapter;
