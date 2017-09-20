@@ -87,6 +87,23 @@ public class MessageUtil
                 }
             }
         };
+        adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver()
+        {
+            @Override
+            public void onItemRangeInserted(int positionStart, int itemCount)
+            {
+                super.onItemRangeInserted(positionStart, itemCount);
+                int messageCount = adapter.getItemCount();
+                int lastVisiblePosition = linearManager.findLastCompletelyVisibleItemPosition();
+
+                if (lastVisiblePosition == -1 ||
+                        (positionStart >= (messageCount -1) &&
+                                lastVisiblePosition == (positionStart -1)))
+                {
+                    recyclerView.scrollToPosition(positionStart);
+                }
+            }
+        });
         return adapter;
     }
     //End Recycler
