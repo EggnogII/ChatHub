@@ -13,8 +13,13 @@ import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.StorageReference;
+
+import java.net.URI;
+import java.util.Calendar;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import edu.sfsu.csc780.chathub.model.ChatMessage;
@@ -39,6 +44,14 @@ public class MessageUtil
     public static void send(ChatMessage chatMessage)
     {
         sFirebaseDatabaseReference.child(MESSAGES_CHILD).push().setValue(chatMessage);
+    }
+
+    public static StorageReference getImageStorageReference(FirebaseUser user, URI uri){
+        //Create a blob storage reference path : bucke/userId/timeMs/filename
+        long nowMs = Calendar.getInstance().getTimeInMillis();
+
+        return sStorage.getReference().child(user.getUid() + "/" + nowMs + "/" + uri
+            .getLastPathSegment());
     }
 
     //Add a static method to make RecyclerViewAdapter
