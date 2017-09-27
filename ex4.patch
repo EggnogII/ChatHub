@@ -1,0 +1,1183 @@
+From ad1d696bdfda7e95b4594f002358f1561e1df9d0 Mon Sep 17 00:00:00 2001
+From: Imran <imranbirfan@gmail.com>
+Date: Tue, 19 Sep 2017 15:47:43 -0700
+Subject: [PATCH] Intial commit with Assignment 3 files
+
+Created MessageUtil class with MessageLoadListener interface and 'send' function.
+
+Added ViewHolder class to MessageUtil java class file. Also created constructors.
+
+Added FirebaseRecyclerAdapter method, currently non-functional. Will implement soon.
+
+Implemented populateViewHolder method.
+
+Added data observer in getFirebaseAdapter method
+
+Refactored ChatMessage class to 'model'. Refactored both SignInActivity, and MainActivity to 'ui'. Deleted duplicated MessageViewHolder class in MainActivity. Deleted CodeLabPreferences.java file.
+
+Connected UI for sending, however there are some issues with Instant Run.
+
+Fixed Firebase issue, reconnected App to Firebase.
+---
+ README.md                                          |   3 -
+ app/build.gradle                                   |   2 +-
+ .../csc780/chathub/MainActivityEspressoTest.java   |   5 +-
+ app/src/main/AndroidManifest.xml                   |   4 +-
+ .../java/edu/sfsu/csc780/chathub/ChatMessage.java  |  56 ------
+ .../sfsu/csc780/chathub/CodelabPreferences.java    |  22 ---
+ .../java/edu/sfsu/csc780/chathub/MainActivity.java | 207 --------------------
+ .../edu/sfsu/csc780/chathub/SignInActivity.java    | 147 --------------
+ .../edu/sfsu/csc780/chathub/model/ChatMessage.java |  56 ++++++
+ .../edu/sfsu/csc780/chathub/ui/MainActivity.java   | 212 +++++++++++++++++++++
+ .../edu/sfsu/csc780/chathub/ui/MessageUtil.java    | 138 ++++++++++++++
+ .../edu/sfsu/csc780/chathub/ui/SignInActivity.java | 143 ++++++++++++++
+ app/src/main/res/layout/activity_main.xml          |   2 +-
+ build.gradle                                       |   2 +-
+ gradle/wrapper/gradle-wrapper.properties           |   2 +-
+ 15 files changed, 556 insertions(+), 445 deletions(-)
+ delete mode 100644 app/src/main/java/edu/sfsu/csc780/chathub/ChatMessage.java
+ delete mode 100644 app/src/main/java/edu/sfsu/csc780/chathub/CodelabPreferences.java
+ delete mode 100644 app/src/main/java/edu/sfsu/csc780/chathub/MainActivity.java
+ delete mode 100644 app/src/main/java/edu/sfsu/csc780/chathub/SignInActivity.java
+ create mode 100644 app/src/main/java/edu/sfsu/csc780/chathub/model/ChatMessage.java
+ create mode 100644 app/src/main/java/edu/sfsu/csc780/chathub/ui/MainActivity.java
+ create mode 100644 app/src/main/java/edu/sfsu/csc780/chathub/ui/MessageUtil.java
+ create mode 100644 app/src/main/java/edu/sfsu/csc780/chathub/ui/SignInActivity.java
+
+diff --git a/README.md b/README.md
+index 4e95bb8..cc0ca75 100644
+--- a/README.md
++++ b/README.md
+@@ -1,6 +1,3 @@
+ # chathub-android
+ SFSU CSC 780
+ This is the repo for the Android ChatHub app.
+-# ChatHub
+-
+-Currently does Sign-In only
+diff --git a/app/build.gradle b/app/build.gradle
+index c9a00ee..8d9cde0 100644
+--- a/app/build.gradle
++++ b/app/build.gradle
+@@ -9,7 +9,7 @@ repositories {
+ 
+ android {
+     compileSdkVersion 25
+-    buildToolsVersion "25.0.2"
++    buildToolsVersion '26.0.1'
+ 
+     defaultConfig {
+         applicationId "edu.sfsu.csc780.chathub"
+diff --git a/app/src/androidTest/java/edu/sfsu/csc780/chathub/MainActivityEspressoTest.java b/app/src/androidTest/java/edu/sfsu/csc780/chathub/MainActivityEspressoTest.java
+index c70d8da..3385dc8 100644
+--- a/app/src/androidTest/java/edu/sfsu/csc780/chathub/MainActivityEspressoTest.java
++++ b/app/src/androidTest/java/edu/sfsu/csc780/chathub/MainActivityEspressoTest.java
+@@ -16,7 +16,6 @@
+ 
+ package edu.sfsu.csc780.chathub;
+ 
+-import android.support.test.espresso.matcher.ViewMatchers;
+ import android.support.test.rule.ActivityTestRule;
+ import android.support.test.runner.AndroidJUnit4;
+ import android.test.suitebuilder.annotation.LargeTest;
+@@ -24,9 +23,7 @@ import android.test.suitebuilder.annotation.LargeTest;
+ import org.junit.Rule;
+ import org.junit.runner.RunWith;
+ 
+-import static android.support.test.espresso.Espresso.onView;
+-import static android.support.test.espresso.assertion.ViewAssertions.matches;
+-import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
++import edu.sfsu.csc780.chathub.ui.MainActivity;
+ 
+ @RunWith(AndroidJUnit4.class)
+ @LargeTest
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index f040107..3916db7 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -8,7 +8,7 @@
+         android:label="@string/app_name"
+         android:supportsRtl="true"
+         android:theme="@style/AppTheme">
+-        <activity android:name="edu.sfsu.csc780.chathub.MainActivity">
++        <activity android:name="edu.sfsu.csc780.chathub.ui.MainActivity">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+ 
+@@ -16,7 +16,7 @@
+             </intent-filter>
+         </activity>
+ 
+-        <activity android:name="edu.sfsu.csc780.chathub.SignInActivity" />
++        <activity android:name="edu.sfsu.csc780.chathub.ui.SignInActivity" />
+ 
+     </application>
+ 
+diff --git a/app/src/main/java/edu/sfsu/csc780/chathub/ChatMessage.java b/app/src/main/java/edu/sfsu/csc780/chathub/ChatMessage.java
+deleted file mode 100644
+index e31b2b9..0000000
+--- a/app/src/main/java/edu/sfsu/csc780/chathub/ChatMessage.java
++++ /dev/null
+@@ -1,56 +0,0 @@
+-/**
+- * Copyright Google Inc. All Rights Reserved.
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- * http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package edu.sfsu.csc780.chathub;
+-
+-public class ChatMessage {
+-
+-    private String text;
+-    private String name;
+-    private String photoUrl;
+-
+-    public ChatMessage() {
+-    }
+-
+-    public ChatMessage(String text, String name, String photoUrl) {
+-        this.text = text;
+-        this.name = name;
+-        this.photoUrl = photoUrl;
+-    }
+-
+-    public String getText() {
+-        return text;
+-    }
+-
+-    public void setText(String text) {
+-        this.text = text;
+-    }
+-
+-    public String getName() {
+-        return name;
+-    }
+-
+-    public void setName(String name) {
+-        this.name = name;
+-    }
+-
+-    public String getPhotoUrl() {
+-        return photoUrl;
+-    }
+-
+-    public void setPhotoUrl(String photoUrl) {
+-        this.photoUrl = photoUrl;
+-    }
+-}
+diff --git a/app/src/main/java/edu/sfsu/csc780/chathub/CodelabPreferences.java b/app/src/main/java/edu/sfsu/csc780/chathub/CodelabPreferences.java
+deleted file mode 100644
+index 5e5c8d8..0000000
+--- a/app/src/main/java/edu/sfsu/csc780/chathub/CodelabPreferences.java
++++ /dev/null
+@@ -1,22 +0,0 @@
+-/**
+- * Copyright Google Inc. All Rights Reserved.
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- * http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package edu.sfsu.csc780.chathub;
+-
+-public class CodelabPreferences {
+-
+-    public static final String MSG_LENGTH = "msg_length";
+-
+-}
+diff --git a/app/src/main/java/edu/sfsu/csc780/chathub/MainActivity.java b/app/src/main/java/edu/sfsu/csc780/chathub/MainActivity.java
+deleted file mode 100644
+index 6f7cfcf..0000000
+--- a/app/src/main/java/edu/sfsu/csc780/chathub/MainActivity.java
++++ /dev/null
+@@ -1,207 +0,0 @@
+-/**
+- * Copyright Google Inc. All Rights Reserved.
+- * <p/>
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- * <p/>
+- * http://www.apache.org/licenses/LICENSE-2.0
+- * <p/>
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package edu.sfsu.csc780.chathub;
+-
+-import android.content.Intent;
+-import android.content.SharedPreferences;
+-import android.os.Bundle;
+-import android.preference.PreferenceManager;
+-import android.support.annotation.NonNull;
+-import android.support.design.widget.FloatingActionButton;
+-import android.support.v7.app.AppCompatActivity;
+-import android.support.v7.widget.LinearLayoutManager;
+-import android.support.v7.widget.RecyclerView;
+-import android.text.Editable;
+-import android.text.InputFilter;
+-import android.text.TextWatcher;
+-import android.util.Log;
+-import android.view.Menu;
+-import android.view.MenuInflater;
+-import android.view.MenuItem;
+-import android.view.View;
+-import android.widget.Button;
+-import android.widget.EditText;
+-import android.widget.ProgressBar;
+-import android.widget.TextView;
+-import android.widget.Toast;
+-
+-import com.google.android.gms.auth.api.Auth;
+-import com.google.android.gms.common.ConnectionResult;
+-import com.google.android.gms.common.api.GoogleApiClient;
+-import com.google.firebase.auth.FirebaseAuth;
+-import com.google.firebase.auth.FirebaseUser;
+-
+-import de.hdodenhof.circleimageview.CircleImageView;
+-
+-public class MainActivity extends AppCompatActivity
+-        implements GoogleApiClient.OnConnectionFailedListener {
+-
+-    public static class MessageViewHolder extends RecyclerView.ViewHolder {
+-        public TextView messageTextView;
+-        public TextView messengerTextView;
+-        public CircleImageView messengerImageView;
+-
+-        public MessageViewHolder(View v) {
+-            super(v);
+-            messageTextView = (TextView) itemView.findViewById(R.id.messageTextView);
+-            messengerTextView = (TextView) itemView.findViewById(R.id.messengerTextView);
+-            messengerImageView = (CircleImageView) itemView.findViewById(R.id.messengerImageView);
+-        }
+-    }
+-
+-    private static final String TAG = "MainActivity";
+-    public static final String MESSAGES_CHILD = "messages";
+-    private static final int REQUEST_INVITE = 1;
+-    public static final int MSG_LENGTH_LIMIT = 10;
+-    public static final String ANONYMOUS = "anonymous";
+-    private String mUsername;
+-    private String mPhotoUrl;
+-    private SharedPreferences mSharedPreferences;
+-    private GoogleApiClient mGoogleApiClient;
+-
+-    private FloatingActionButton mSendButton;
+-    private RecyclerView mMessageRecyclerView;
+-    private LinearLayoutManager mLinearLayoutManager;
+-    private ProgressBar mProgressBar;
+-    private EditText mMessageEditText;
+-
+-    // Firebase instance variables
+-    private FirebaseAuth mAuth;
+-    private FirebaseUser mUser;
+-
+-    @Override
+-    protected void onCreate(Bundle savedInstanceState) {
+-        super.onCreate(savedInstanceState);
+-        setContentView(R.layout.activity_main);
+-        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+-        // Set default username is anonymous.
+-        mUsername = ANONYMOUS;
+-        //Initialize Auth
+-        mAuth = FirebaseAuth.getInstance();
+-        mUser = mAuth.getCurrentUser();
+-        if (mUser == null)
+-        {
+-            startActivity(new Intent(this, SignInActivity.class));
+-            finish();
+-            return;
+-        }
+-        else
+-        {
+-            mUsername = mUser.getDisplayName();
+-            if (mUser.getPhotoUrl() != null)
+-            {
+-                mPhotoUrl = mUser.getPhotoUrl().toString();
+-            }
+-        }
+-
+-        mGoogleApiClient = new GoogleApiClient.Builder(this)
+-                .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
+-                .addApi(Auth.GOOGLE_SIGN_IN_API)
+-                .build();
+-
+-        // Initialize ProgressBar and RecyclerView.
+-        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
+-        mMessageRecyclerView = (RecyclerView) findViewById(R.id.messageRecyclerView);
+-        mLinearLayoutManager = new LinearLayoutManager(this);
+-        mLinearLayoutManager.setStackFromEnd(true);
+-        mMessageRecyclerView.setLayoutManager(mLinearLayoutManager);
+-
+-        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+-
+-        mMessageEditText = (EditText) findViewById(R.id.messageEditText);
+-        mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(MSG_LENGTH_LIMIT)});
+-        mMessageEditText.addTextChangedListener(new TextWatcher() {
+-            @Override
+-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+-            }
+-
+-            @Override
+-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+-                if (charSequence.toString().trim().length() > 0) {
+-                    mSendButton.setEnabled(true);
+-                } else {
+-                    mSendButton.setEnabled(false);
+-                }
+-            }
+-
+-            @Override
+-            public void afterTextChanged(Editable editable) {
+-            }
+-        });
+-
+-        mSendButton = (FloatingActionButton) findViewById(R.id.sendButton);
+-        mSendButton.setOnClickListener(new View.OnClickListener() {
+-            @Override
+-            public void onClick(View view) {
+-                // Send messages on click.
+-            }
+-        });
+-    }
+-
+-    @Override
+-    public void onStart() {
+-        super.onStart();
+-        // Check if user is signed in.
+-        // TODO: Add code to check if user is signed in.
+-    }
+-
+-    @Override
+-    public void onPause() {
+-        super.onPause();
+-    }
+-
+-    @Override
+-    public void onResume() {
+-        super.onResume();
+-    }
+-
+-    @Override
+-    public void onDestroy() {
+-        super.onDestroy();
+-    }
+-
+-    @Override
+-    public boolean onCreateOptionsMenu(Menu menu) {
+-        MenuInflater inflater = getMenuInflater();
+-        inflater.inflate(R.menu.main_menu, menu);
+-        return true;
+-    }
+-
+-    @Override
+-    public boolean onOptionsItemSelected(MenuItem item) {
+-        switch (item.getItemId())
+-        {
+-            case R.id.sign_out_menu:
+-                mAuth.signOut();
+-            Auth.GoogleSignInApi.signOut(mGoogleApiClient);
+-                mUsername = ANONYMOUS;
+-                startActivity(new Intent(this, SignInActivity.class));
+-                return true;
+-            default:
+-                return super.onOptionsItemSelected(item);
+-
+-        }
+-
+-    }
+-
+-    @Override
+-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+-        // An unresolvable error has occurred and Google APIs (including Sign-In) will not
+-        // be available.
+-        Log.d(TAG, "onConnectionFailed:" + connectionResult);
+-        Toast.makeText(this, "Google Play Services error.", Toast.LENGTH_SHORT).show();
+-    }
+-}
+diff --git a/app/src/main/java/edu/sfsu/csc780/chathub/SignInActivity.java b/app/src/main/java/edu/sfsu/csc780/chathub/SignInActivity.java
+deleted file mode 100644
+index 6dcf299..0000000
+--- a/app/src/main/java/edu/sfsu/csc780/chathub/SignInActivity.java
++++ /dev/null
+@@ -1,147 +0,0 @@
+-/**
+- * Copyright Google Inc. All Rights Reserved.
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- * http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package edu.sfsu.csc780.chathub;
+-
+-import android.content.Intent;
+-import android.os.Bundle;
+-import android.support.annotation.NonNull;
+-import android.support.v7.app.AppCompatActivity;
+-import android.util.Log;
+-import android.view.View;
+-import android.widget.Toast;
+-
+-import com.google.android.gms.auth.api.Auth;
+-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+-import com.google.android.gms.auth.api.signin.GoogleSignInResult;
+-import com.google.android.gms.common.ConnectionResult;
+-import com.google.android.gms.common.SignInButton;
+-import com.google.android.gms.common.api.GoogleApiClient;
+-import com.google.android.gms.tasks.OnCompleteListener;
+-import com.google.android.gms.tasks.Task;
+-import com.google.firebase.auth.AuthCredential;
+-import com.google.firebase.auth.AuthResult;
+-import com.google.firebase.auth.FirebaseAuth;
+-import com.google.firebase.auth.GoogleAuthProvider;
+-
+-public class SignInActivity extends AppCompatActivity implements
+-        GoogleApiClient.OnConnectionFailedListener, View.OnClickListener {
+-
+-    private static final String TAG = "SignInActivity";
+-    private static final int RC_SIGN_IN = 9001;
+-
+-    private SignInButton mSignInButton;
+-
+-    private GoogleApiClient mGoogleApiClient;
+-
+-    // Firebase instance variables
+-    private FirebaseAuth mAuth;
+-
+-    @Override
+-    protected void onCreate(Bundle savedInstanceState) {
+-        super.onCreate(savedInstanceState);
+-        setContentView(R.layout.activity_sign_in);
+-
+-        // Assign fields
+-        mSignInButton = (SignInButton) findViewById(R.id.sign_in_button);
+-
+-        // Set click listeners
+-        mSignInButton.setOnClickListener(this);
+-
+-        // Configure Google Sign In
+-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+-                .requestIdToken(getString(R.string.default_web_client_id))
+-                .requestEmail()
+-                .build();
+-        mGoogleApiClient = new GoogleApiClient.Builder(this)
+-                .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
+-                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
+-                .build();
+-
+-        // Initialize FirebaseAuth
+-        //Initialize Auth
+-        mAuth = FirebaseAuth.getInstance();
+-    }
+-
+-    private void signIn()
+-    {
+-        Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
+-        startActivityForResult(signInIntent, RC_SIGN_IN);
+-    }
+-
+-    @Override
+-    public void onClick(View v) {
+-        switch (v.getId()) {
+-            case R.id.sign_in_button:
+-                signIn();
+-                break;
+-        }
+-    }
+-
+-    @Override
+-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+-        // An unresolvable error has occurred and Google APIs (including Sign-In) will not
+-        // be available.
+-        Log.d(TAG, "onConnectionFailed:" + connectionResult);
+-        Toast.makeText(this, "Google Play Services error.", Toast.LENGTH_SHORT).show();
+-    }
+-
+-    @Override
+-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+-        super.onActivityResult(requestCode, resultCode, data);
+-        // Handle the result of the sign-in activity
+-        if (requestCode == RC_SIGN_IN)
+-        {
+-            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+-            if (result.isSuccess())
+-            {
+-                //SUCCESS, auth with Firebase
+-                GoogleSignInAccount account = result.getSignInAccount();
+-                firebaseAuthWithGoogle(account);
+-            }
+-            else
+-            {
+-                //Failure
+-                Log.e(TAG, "Google Sign in failure");
+-            }
+-        }
+-    }
+-
+-    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+-        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+-        mAuth.signInWithCredential(credential)
+-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+-                    @Override
+-                    public void onComplete(@NonNull Task<AuthResult> task) {
+-                        // Process the auth task result
+-                        Log.d(TAG, "signInWithCredential:onComplete:" + task.isSuccessful());
+-                        //If sign in fails, display message to user
+-                        //If sign in succeeds, start MainActivity
+-                        if (!task.isSuccessful())
+-                        {
+-                            Log.w(TAG, "signInWithCredential" + task.getException());
+-                            Toast.makeText(SignInActivity.this, "Authentication failed", Toast.LENGTH_SHORT).show();
+-
+-                        }
+-                        else
+-                        {
+-                            startActivity(new Intent(SignInActivity.this, MainActivity.class));
+-                            finish();
+-                        }
+-                    }
+-                });
+-    }
+-}
+diff --git a/app/src/main/java/edu/sfsu/csc780/chathub/model/ChatMessage.java b/app/src/main/java/edu/sfsu/csc780/chathub/model/ChatMessage.java
+new file mode 100644
+index 0000000..21b875f
+--- /dev/null
++++ b/app/src/main/java/edu/sfsu/csc780/chathub/model/ChatMessage.java
+@@ -0,0 +1,56 @@
++/**
++ * Copyright Google Inc. All Rights Reserved.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package edu.sfsu.csc780.chathub.model;
++
++public class ChatMessage {
++
++    private String text;
++    private String name;
++    private String photoUrl;
++
++    public ChatMessage() {
++    }
++
++    public ChatMessage(String text, String name, String photoUrl) {
++        this.text = text;
++        this.name = name;
++        this.photoUrl = photoUrl;
++    }
++
++    public String getText() {
++        return text;
++    }
++
++    public void setText(String text) {
++        this.text = text;
++    }
++
++    public String getName() {
++        return name;
++    }
++
++    public void setName(String name) {
++        this.name = name;
++    }
++
++    public String getPhotoUrl() {
++        return photoUrl;
++    }
++
++    public void setPhotoUrl(String photoUrl) {
++        this.photoUrl = photoUrl;
++    }
++}
+diff --git a/app/src/main/java/edu/sfsu/csc780/chathub/ui/MainActivity.java b/app/src/main/java/edu/sfsu/csc780/chathub/ui/MainActivity.java
+new file mode 100644
+index 0000000..252a3f3
+--- /dev/null
++++ b/app/src/main/java/edu/sfsu/csc780/chathub/ui/MainActivity.java
+@@ -0,0 +1,212 @@
++/**
++ * Copyright Google Inc. All Rights Reserved.
++ * <p/>
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * <p/>
++ * http://www.apache.org/licenses/LICENSE-2.0
++ * <p/>
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package edu.sfsu.csc780.chathub.ui;
++
++import android.content.Intent;
++import android.content.SharedPreferences;
++import android.os.Bundle;
++import android.preference.PreferenceManager;
++import android.support.annotation.NonNull;
++import android.support.design.widget.FloatingActionButton;
++import android.support.v7.app.AppCompatActivity;
++import android.support.v7.widget.LinearLayoutManager;
++import android.support.v7.widget.RecyclerView;
++import android.text.Editable;
++import android.text.InputFilter;
++import android.text.TextWatcher;
++import android.util.Log;
++import android.view.Menu;
++import android.view.MenuInflater;
++import android.view.MenuItem;
++import android.view.View;
++import android.widget.EditText;
++import android.widget.ProgressBar;
++import android.widget.TextView;
++import android.widget.Toast;
++
++import com.firebase.ui.database.FirebaseRecyclerAdapter;
++import com.google.android.gms.auth.api.Auth;
++import com.google.android.gms.common.ConnectionResult;
++import com.google.android.gms.common.api.GoogleApiClient;
++import com.google.firebase.auth.FirebaseAuth;
++import com.google.firebase.auth.FirebaseUser;
++
++import de.hdodenhof.circleimageview.CircleImageView;
++import edu.sfsu.csc780.chathub.R;
++import edu.sfsu.csc780.chathub.model.ChatMessage;
++import edu.sfsu.csc780.chathub.ui.SignInActivity;
++
++public class MainActivity extends AppCompatActivity
++        implements GoogleApiClient.OnConnectionFailedListener,
++        MessageUtil.MessageLoadListener {
++
++    private static final String TAG = "MainActivity";
++    public static final String MESSAGES_CHILD = "messages";
++    private static final int REQUEST_INVITE = 1;
++    public static final int MSG_LENGTH_LIMIT = 10;
++    public static final String ANONYMOUS = "anonymous";
++    private String mUsername;
++    private String mPhotoUrl;
++    private SharedPreferences mSharedPreferences;
++    private GoogleApiClient mGoogleApiClient;
++
++    private FloatingActionButton mSendButton;
++    private RecyclerView mMessageRecyclerView;
++    private LinearLayoutManager mLinearLayoutManager;
++    private ProgressBar mProgressBar;
++    private EditText mMessageEditText;
++
++    // Firebase instance variables
++    private FirebaseAuth mAuth;
++    private FirebaseUser mUser;
++
++    //Adapter
++    private FirebaseRecyclerAdapter<ChatMessage, MessageUtil.MessageViewHolder> mFirebaseAdapter;
++
++    @Override
++    protected void onCreate(Bundle savedInstanceState) {
++        super.onCreate(savedInstanceState);
++        setContentView(R.layout.activity_main);
++        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
++        // Set default username is anonymous.
++        mUsername = ANONYMOUS;
++        //Initialize Auth
++        mAuth = FirebaseAuth.getInstance();
++        mUser = mAuth.getCurrentUser();
++        if (mUser == null) {
++            startActivity(new Intent(this, SignInActivity.class));
++            finish();
++            return;
++        } else {
++            mUsername = mUser.getDisplayName();
++            if (mUser.getPhotoUrl() != null) {
++                mPhotoUrl = mUser.getPhotoUrl().toString();
++            }
++        }
++        mGoogleApiClient = new GoogleApiClient.Builder(this)
++                .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
++                .addApi(Auth.GOOGLE_SIGN_IN_API)
++                .build();
++
++        // Initialize ProgressBar and RecyclerView.
++        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
++        mMessageRecyclerView = (RecyclerView) findViewById(R.id.messageRecyclerView);
++        mLinearLayoutManager = new LinearLayoutManager(this);
++        mLinearLayoutManager.setStackFromEnd(true);
++        mMessageRecyclerView.setLayoutManager(mLinearLayoutManager);
++
++        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
++
++        mMessageEditText = (EditText) findViewById(R.id.messageEditText);
++        mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(MSG_LENGTH_LIMIT)});
++        mMessageEditText.addTextChangedListener(new TextWatcher() {
++            @Override
++            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
++            }
++
++            @Override
++            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
++                if (charSequence.toString().trim().length() > 0) {
++                    mSendButton.setEnabled(true);
++                } else {
++                    mSendButton.setEnabled(false);
++                }
++            }
++
++            @Override
++            public void afterTextChanged(Editable editable) {
++            }
++        });
++
++        mFirebaseAdapter = MessageUtil.getFirebaseAdapter(this,
++                this, /*MessageLoadListener */
++                mLinearLayoutManager,
++                mMessageRecyclerView);
++
++        mMessageRecyclerView.setAdapter(mFirebaseAdapter);
++
++        mSendButton = (FloatingActionButton) findViewById(R.id.sendButton);
++        mSendButton.setOnClickListener(new View.OnClickListener() {
++            @Override
++            public void onClick(View view) {
++
++                // Send messages on click.
++                mMessageRecyclerView.scrollToPosition(0);
++                ChatMessage chatMessage = new ChatMessage(mMessageEditText.getText().toString(),
++                        mUsername,
++                        mPhotoUrl);
++                MessageUtil.send(chatMessage);
++                mMessageEditText.setText("");
++            }
++        });
++    }
++
++    @Override
++    public void onLoadComplete() {
++        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
++    }
++
++    @Override
++    public void onStart() {
++        super.onStart();
++        // Check if user is signed in.
++        // TODO: Add code to check if user is signed in.
++    }
++
++    @Override
++    public void onPause() {
++        super.onPause();
++    }
++
++    @Override
++    public void onResume() {
++        super.onResume();
++    }
++
++    @Override
++    public void onDestroy() {
++        super.onDestroy();
++    }
++
++    @Override
++    public boolean onCreateOptionsMenu(Menu menu) {
++        MenuInflater inflater = getMenuInflater();
++        inflater.inflate(R.menu.main_menu, menu);
++        return true;
++    }
++
++    @Override
++    public boolean onOptionsItemSelected(MenuItem item) {
++        switch (item.getItemId()) {
++            case R.id.sign_out_menu:
++                mAuth.signOut();
++                Auth.GoogleSignInApi.signOut(mGoogleApiClient);
++                mUsername = ANONYMOUS;
++                startActivity(new Intent(this, SignInActivity.class));
++                return true;
++            default:
++                return super.onOptionsItemSelected(item);
++        }
++    }
++
++    @Override
++    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
++        // An unresolvable error has occurred and Google APIs (including Sign-In) will not
++        // be available.
++        Log.d(TAG, "onConnectionFailed:" + connectionResult);
++        Toast.makeText(this, "Google Play Services error.", Toast.LENGTH_SHORT).show();
++    }
++}
+diff --git a/app/src/main/java/edu/sfsu/csc780/chathub/ui/MessageUtil.java b/app/src/main/java/edu/sfsu/csc780/chathub/ui/MessageUtil.java
+new file mode 100644
+index 0000000..32cbcb6
+--- /dev/null
++++ b/app/src/main/java/edu/sfsu/csc780/chathub/ui/MessageUtil.java
+@@ -0,0 +1,138 @@
++package edu.sfsu.csc780.chathub.ui;
++
++import android.app.Activity;
++import android.graphics.Bitmap;
++import android.support.v4.content.ContextCompat;
++import android.support.v7.widget.LinearLayoutManager;
++import android.support.v7.widget.RecyclerView;
++import android.view.View;
++import android.widget.TextView;
++
++import com.bumptech.glide.Glide;
++import com.bumptech.glide.request.animation.GlideAnimation;
++import com.bumptech.glide.request.target.SimpleTarget;
++import com.firebase.ui.database.FirebaseRecyclerAdapter;
++import com.google.firebase.auth.FirebaseAuth;
++import com.google.firebase.database.DatabaseReference;
++import com.google.firebase.database.FirebaseDatabase;
++
++import de.hdodenhof.circleimageview.CircleImageView;
++import edu.sfsu.csc780.chathub.model.ChatMessage;
++import edu.sfsu.csc780.chathub.R;
++
++/**
++ * Created by bees on 9/19/17.
++ */
++
++public class MessageUtil
++{
++    private static final String LOG_TAG = MessageUtil.class.getSimpleName();
++    public static final String MESSAGES_CHILD = "messages";
++    private static DatabaseReference sFirebaseDatabaseReference =
++            FirebaseDatabase.getInstance().getReference();
++
++    private static MessageLoadListener sAdapterListener;
++    private static FirebaseAuth sFirebaseAuth;
++
++    public interface MessageLoadListener {public void onLoadComplete();}
++
++    public static void send(ChatMessage chatMessage)
++    {
++        sFirebaseDatabaseReference.child(MESSAGES_CHILD).push().setValue(chatMessage);
++    }
++
++    //Add a static method to make RecyclerViewAdapter
++
++    public static FirebaseRecyclerAdapter getFirebaseAdapter(final Activity activity,
++                                                             MessageLoadListener listener,
++                                                             final LinearLayoutManager linearManager,
++                                                            final RecyclerView recyclerView)
++    {
++        sAdapterListener = listener;
++
++        final FirebaseRecyclerAdapter adapter = new FirebaseRecyclerAdapter<ChatMessage,
++                MessageViewHolder>(
++                    ChatMessage.class,
++                    R.layout.item_message,
++                    MessageViewHolder.class,
++                    sFirebaseDatabaseReference.child(MESSAGES_CHILD))
++                {
++                    @Override
++                    protected void populateViewHolder(final MessageViewHolder viewHolder,
++                                                    ChatMessage chatMessage, int position)
++                    {
++                        //more TODO
++                        sAdapterListener.onLoadComplete();
++
++                        viewHolder.messageTextView.setText(chatMessage.getText());
++                        viewHolder.messengerTextView.setText(chatMessage.getName());
++
++                        if (chatMessage.getPhotoUrl() == null)
++                        {
++                            viewHolder.messengerImageView
++                                    .setImageDrawable(ContextCompat
++                                    .getDrawable(activity,
++                                            R.drawable.ic_account_circle_black_36dp));
++                        }
++
++                       else
++                        {
++                            SimpleTarget target = new SimpleTarget<Bitmap>()
++                            {
++                                @Override
++                                public void onResourceReady(Bitmap bitmap, GlideAnimation glideAnimation)
++                                {
++                                    viewHolder.messengerImageView.setImageBitmap(bitmap);
++                                }
++                            };
++
++                        Glide.with(activity)
++                                .load(chatMessage
++                                .getPhotoUrl())
++                                .asBitmap()
++                                .into(target);
++                        }
++                    } //End populateViewHolder
++                }; //End Firebase Recycler Adapter creation
++
++            adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver()
++            {
++                @Override
++                public void onItemRangeInserted(int positionStart, int itemCount)
++                {
++                    super.onItemRangeInserted(positionStart, itemCount);
++                    int messageCount = adapter.getItemCount();
++                    int lastVisiblePosition = linearManager.findLastCompletelyVisibleItemPosition();
++
++                    if (lastVisiblePosition == -1 ||
++                        (positionStart >= (messageCount -1) &&
++                                lastVisiblePosition == (positionStart -1)))
++                    {
++                        recyclerView.scrollToPosition(positionStart);
++                    }
++                }
++            });
++
++        return adapter;
++    }
++    //End Recycler
++
++    public static class MessageViewHolder extends RecyclerView.ViewHolder
++    {
++        public TextView messageTextView;
++        public TextView messengerTextView;
++        public CircleImageView messengerImageView;
++
++        public MessageViewHolder(View v)
++        {
++            super(v);
++            messageTextView = (TextView) itemView.findViewById(R.id.messageTextView);
++            messengerTextView = (TextView) itemView.findViewById(R.id.messengerTextView);
++            messengerImageView = (CircleImageView) itemView.findViewById(R.id.messengerImageView);
++        }
++
++    }
++
++}
++
++
+diff --git a/app/src/main/java/edu/sfsu/csc780/chathub/ui/SignInActivity.java b/app/src/main/java/edu/sfsu/csc780/chathub/ui/SignInActivity.java
+new file mode 100644
+index 0000000..e42f1de
+--- /dev/null
++++ b/app/src/main/java/edu/sfsu/csc780/chathub/ui/SignInActivity.java
+@@ -0,0 +1,143 @@
++/**
++ * Copyright Google Inc. All Rights Reserved.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package edu.sfsu.csc780.chathub.ui;
++
++import android.content.Intent;
++import android.os.Bundle;
++import android.support.annotation.NonNull;
++import android.support.v7.app.AppCompatActivity;
++import android.util.Log;
++import android.view.View;
++import android.widget.Toast;
++
++import com.google.android.gms.auth.api.Auth;
++import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
++import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
++import com.google.android.gms.auth.api.signin.GoogleSignInResult;
++import com.google.android.gms.common.ConnectionResult;
++import com.google.android.gms.common.SignInButton;
++import com.google.android.gms.common.api.GoogleApiClient;
++import com.google.android.gms.tasks.OnCompleteListener;
++import com.google.android.gms.tasks.Task;
++import com.google.firebase.auth.AuthCredential;
++import com.google.firebase.auth.AuthResult;
++import com.google.firebase.auth.FirebaseAuth;
++import com.google.firebase.auth.GoogleAuthProvider;
++
++import edu.sfsu.csc780.chathub.R;
++
++public class SignInActivity extends AppCompatActivity implements
++        GoogleApiClient.OnConnectionFailedListener, View.OnClickListener {
++
++    private static final String TAG = "SignInActivity";
++    private static final int RC_SIGN_IN = 9001;
++
++    private SignInButton mSignInButton;
++
++    private GoogleApiClient mGoogleApiClient;
++
++    // Firebase instance variables
++    private FirebaseAuth mAuth;
++
++    @Override
++    protected void onCreate(Bundle savedInstanceState) {
++        super.onCreate(savedInstanceState);
++        setContentView(R.layout.activity_sign_in);
++
++        // Assign fields
++        mSignInButton = (SignInButton) findViewById(R.id.sign_in_button);
++
++        // Set click listeners
++        mSignInButton.setOnClickListener(this);
++
++        // Configure Google Sign In
++        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
++                .requestIdToken(getString(R.string.default_web_client_id))
++                .requestEmail()
++                .build();
++        mGoogleApiClient = new GoogleApiClient.Builder(this)
++                .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
++                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
++                .build();
++
++        // Initialize FirebaseAuth
++        //Initialize Auth
++        mAuth = FirebaseAuth.getInstance();
++
++    }
++
++    private void signIn() {
++        Intent signInIntent =
++                Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
++        startActivityForResult(signInIntent, RC_SIGN_IN);
++    }
++
++    @Override
++    public void onClick(View v) {
++        switch (v.getId()) {
++            case R.id.sign_in_button:
++                signIn();
++                break;
++        }
++    }
++
++    @Override
++    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
++        // An unresolvable error has occurred and Google APIs (including Sign-In) will not
++        // be available.
++        Log.d(TAG, "onConnectionFailed:" + connectionResult);
++        Toast.makeText(this, "Google Play Services error.", Toast.LENGTH_SHORT).show();
++    }
++
++    @Override
++    public void onActivityResult(int requestCode, int resultCode, Intent data) {
++        super.onActivityResult(requestCode, resultCode, data);
++        // Handle the result of the sign-in activity
++        if (requestCode == RC_SIGN_IN) {
++            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
++            if (result.isSuccess()) {
++                // successful, now authenticate with Firebase
++                GoogleSignInAccount account = result.getSignInAccount();
++                firebaseAuthWithGoogle(account);
++            } else {
++                Log.e(TAG, "Google Sign In failed.");
++            }
++        }
++    }
++
++    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
++        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
++        mAuth.signInWithCredential(credential)
++                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
++                    @Override
++                    public void onComplete(@NonNull Task<AuthResult> task) {
++                        // Process the auth task result
++                        Log.d(TAG, "signInWithCredential:onComplete:" + task.isSuccessful());
++                        // If sign in fails, display a message to the user.
++                        // If sign in succeeds, start MainActivity and finish this activity
++                        if (!task.isSuccessful()) {
++                            Log.w(TAG, "signInWithCredential", task.getException());
++                            Toast.makeText(SignInActivity.this, "Authentication failed.",
++                                    Toast.LENGTH_SHORT).show();
++                        } else {
++                            startActivity(new Intent(SignInActivity.this, MainActivity.class));
++                            finish();
++                        }
++
++                    }
++                });
++    }
++}
+diff --git a/app/src/main/res/layout/activity_main.xml b/app/src/main/res/layout/activity_main.xml
+index 1951473..c131104 100644
+--- a/app/src/main/res/layout/activity_main.xml
++++ b/app/src/main/res/layout/activity_main.xml
+@@ -8,7 +8,7 @@
+     android:paddingLeft="@dimen/activity_horizontal_margin"
+     android:paddingRight="@dimen/activity_horizontal_margin"
+     android:paddingTop="@dimen/activity_vertical_margin"
+-    tools:context="edu.sfsu.csc780.chathub.MainActivity">
++    tools:context="edu.sfsu.csc780.chathub.ui.MainActivity">
+ 
+     <android.support.v7.widget.RecyclerView
+         android:id="@+id/messageRecyclerView"
+diff --git a/build.gradle b/build.gradle
+index 55c282d..2bff6d1 100644
+--- a/build.gradle
++++ b/build.gradle
+@@ -7,7 +7,7 @@ buildscript {
+     }
+     dependencies {
+         classpath 'com.android.tools.build:gradle:2.3.3'
+-        classpath 'com.google.gms:google-services:3.1.0'
++        classpath 'com.google.gms:google-services:3.0.0'
+ 
+         // NOTE: Do not place your application dependencies here; they belong
+         // in the individual module build.gradle files
+diff --git a/gradle/wrapper/gradle-wrapper.properties b/gradle/wrapper/gradle-wrapper.properties
+index 4c9d324..3a931e0 100644
+--- a/gradle/wrapper/gradle-wrapper.properties
++++ b/gradle/wrapper/gradle-wrapper.properties
+@@ -1,4 +1,4 @@
+-#Mon Sep 11 15:47:34 PDT 2017
++#Tue Sep 19 18:29:11 PDT 2017
+ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+ zipStoreBase=GRADLE_USER_HOME
+-- 
+2.7.4
+
