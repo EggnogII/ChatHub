@@ -59,7 +59,7 @@ public class MessageUtil
         sFirebaseDatabaseReference.child(MESSAGES_CHILD).push().setValue(chatMessage);
     }
 
-    public static StorageReference getImageStorageReference(FirebaseUser user, URI uri){
+    public static StorageReference getImageStorageReference(FirebaseUser user, Uri uri){
         //Create a blob storage reference path : bucke/userId/timeMs/filename
         long nowMs = Calendar.getInstance().getTimeInMillis();
 
@@ -150,7 +150,7 @@ public class MessageUtil
                             }).addOnFailureListener(new OnFailureListener() {
                                 @Override
                                 public void onFailure(@NonNull Exception e) {
-                                    Log.e(LOG TAG, "Could not load image for message", e);
+                                    Log.e(TAG, "Could not load image for message", e);
                                 }
                             });
                         }
@@ -158,7 +158,7 @@ public class MessageUtil
                             viewHolder.messageTextView.setText("Error loading image");
                             Log.e(LOG_TAG, e.getMessage() + " : "+ chatMessage.getImageUrl());
                         }
-                        
+
                     } //End populateViewHolder
                 }; //End Firebase Recycler Adapter creation
 
