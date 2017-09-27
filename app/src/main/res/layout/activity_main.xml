@@ -44,7 +44,7 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             />
-        
+
         <ImageButton
             android:id="@+id/shareImageButton"
             android:src= "@drawable/ic_image_black_24px"
