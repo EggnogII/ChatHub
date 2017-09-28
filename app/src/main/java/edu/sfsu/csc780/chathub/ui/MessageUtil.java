@@ -125,7 +125,6 @@ public class MessageUtil
                             viewHolder.messageImageView.setVisibility(View.VISIBLE);
                             viewHolder.messageTextView.setVisibility(View.GONE);
                             //Load Image for message
-
                         }
                         else
                         {
@@ -149,12 +148,12 @@ public class MessageUtil
 
                             }).addOnFailureListener(new OnFailureListener() {
                                 @Override
-                                public void onFailure(@NonNull Exception e) {
+                                public void onFailure(@NonNull Exception e){
                                     Log.e(TAG, "Could not load image for message", e);
                                 }
                             });
                         }
-                        catch (IllegalFormatCodePointException e){
+                        catch (IllegalArgumentException e){
                             viewHolder.messageTextView.setText("Error loading image");
                             Log.e(LOG_TAG, e.getMessage() + " : "+ chatMessage.getImageUrl());
                         }

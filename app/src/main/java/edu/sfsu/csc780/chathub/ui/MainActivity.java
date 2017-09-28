@@ -199,6 +199,11 @@ public class MainActivity extends AppCompatActivity
                 Uri uri= data.getData();
                 Log.i(TAG, "Uri: " + uri.toString());
                 //Resize if too big for messaging
+                Bitmap bitmap= getBitmapForUri(uri);
+                Bitmap resizedBitmap = scaleImage(bitmap);
+                if (bitmap !=resizedBitmap){
+                    uri = savePhotoImage(resizedBitmap);
+                }
 
                 createImageMessage(uri);
             }
@@ -206,8 +211,6 @@ public class MainActivity extends AppCompatActivity
             else {
                 Log.e(TAG, "Cannot get image for uploading");
             }
-
-
 
         }
     }
@@ -254,8 +257,8 @@ public class MainActivity extends AppCompatActivity
         Bitmap bitmap = null;
         try{
             bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
-
         }
+
         catch (IOException e){
             e.printStackTrace();
         }
