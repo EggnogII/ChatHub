@@ -26,6 +26,14 @@ import org.junit.runner.RunWith;
 
 import edu.sfsu.csc780.chathub.ui.MainActivity;
 
+import static android.support.test.espresso.Espresso.onView;
+import static android.support.test.espresso.action.ViewActions.click;
+import static android.support.test.espresso.action.ViewActions.closeSoftKeyboard;
+import static android.support.test.espresso.action.ViewActions.typeText;
+import static android.support.test.espresso.assertion.ViewAssertions.matches;
+import static android.support.test.espresso.matcher.ViewMatchers.withId;
+import static android.support.test.espresso.matcher.ViewMatchers.withText;
+
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class MainActivityEspressoTest {
@@ -38,6 +46,14 @@ public class MainActivityEspressoTest {
     @Test
     public void ensureMessageFieldClearsAfterSend(){
         //TODO
-        
+        //Use a ViewMatcher withId() to get the view and use a ViewAction typeText()
+        onView(withId(R.id.messageEditText))
+                .perform(typeText("Testing 1, 2, 3"), closeSoftKeyboard());
+
+        //Use ViewMatcher withId() again and the ViewAction click()
+        onView(withId(R.id.sendButton)).perform(click());
+
+        //Again use matcher, but nowuse ViewAssertion matches() to verify state of view
+        onView(withId(R.id.messageEditText)).check(matches(withText("")));
     }
 }

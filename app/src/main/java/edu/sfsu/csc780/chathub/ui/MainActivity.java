@@ -62,6 +62,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import edu.sfsu.csc780.chathub.ImageUtil;
 import edu.sfsu.csc780.chathub.R;
 import edu.sfsu.csc780.chathub.model.ChatMessage;
 import edu.sfsu.csc780.chathub.ui.SignInActivity;
@@ -275,10 +276,10 @@ public class MainActivity extends AppCompatActivity
                 Uri uri= data.getData();
                 Log.i(TAG, "Uri: " + uri.toString());
                 //resize if image is too big
-                Bitmap bitmap= getBitmapForUri(uri);
-                Bitmap resizedBitmap= scaleImage(bitmap);
+                Bitmap bitmap= ImageUtil.getBitmapForUri(uri);
+                Bitmap resizedBitmap= ImageUtil.scaleImage(bitmap);
                 if (bitmap != resizedBitmap){
-                    uri = savePhotoImage(resizedBitmap);
+                    uri = ImageUtil.savePhotoImage(resizedBitmap);
                 }
                 createMessage(uri);
             }

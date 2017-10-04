@@ -24,7 +24,7 @@ public class ImageUtil {
     public static final double MAX_LINEAR_DIMENSION = 500.0;
     static String IMAGE_FILE_PREFIX = "chathub-";
 
-    private Bitmap scaleImage(Bitmap bitmap){
+    public static Bitmap scaleImage(Bitmap bitmap){
         int originalHeight = bitmap.getHeight();
         int originalWidth = bitmap.getWidth();
         double scaleFactor = MAX_LINEAR_DIMENSION / (double) (originalHeight + originalWidth);
@@ -39,7 +39,7 @@ public class ImageUtil {
         }
     }
 
-    private Uri savePhotoImage(Bitmap imageBitmap){
+    public static Uri savePhotoImage(Bitmap imageBitmap){
         File photoFile = null;
         try{
             photoFile= createImageFile();
@@ -69,7 +69,7 @@ public class ImageUtil {
         return Uri.fromFile(photoFile);
     }
 
-    private File createImageFile() throws IOException {
+    public static File createImageFile() throws IOException {
         //Create Image File Name
         String timeStamp = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
         String imageFileNamePrefix= IMAGE_FILE_PREFIX + timeStamp;
@@ -84,7 +84,7 @@ public class ImageUtil {
         return  imageFile;
     }
 
-    private Bitmap getBitmapForUri(Uri imageUri){
+    public static Bitmap getBitmapForUri(Uri imageUri){
         Bitmap bitmap = null;
         try{
             bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
