@@ -20,6 +20,15 @@ public class ChatMessage {
     private String text;
     private String name;
     private String photoUrl;
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
     private String imageUrl;
 
     public ChatMessage() {
@@ -31,13 +40,9 @@ public class ChatMessage {
         this.photoUrl = photoUrl;
     }
 
-    public ChatMessage(String text, String name, String photoUrl, String imageUrl){
+    public ChatMessage(String text, String name, String photoUrl, String imageUrl) {
         this(text, name, photoUrl);
-        this.imageUrl= imageUrl;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
+        this.imageUrl = imageUrl;
     }
 
     public String getText() {

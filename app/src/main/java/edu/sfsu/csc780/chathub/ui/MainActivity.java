@@ -62,14 +62,15 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import de.hdodenhof.circleimageview.CircleImageView;
-import edu.sfsu.csc780.chathub.ImageUtil;
+import edu.sfsu.csc780.chathub.MessageUtil;
 import edu.sfsu.csc780.chathub.R;
 import edu.sfsu.csc780.chathub.model.ChatMessage;
 import edu.sfsu.csc780.chathub.ui.SignInActivity;
 
+import static com.bumptech.glide.gifdecoder.GifHeaderParser.TAG;
+
 public class MainActivity extends AppCompatActivity
-        implements GoogleApiClient.OnConnectionFailedListener,
-        MessageUtil.MessageLoadListener {
+        implements GoogleApiClient.OnConnectionFailedListener, MessageUtil.MessageLoadListener  {
 
     private static final String TAG = "MainActivity";
     public static final String MESSAGES_CHILD = "messages";
@@ -78,12 +79,12 @@ public class MainActivity extends AppCompatActivity
     public static final String ANONYMOUS = "anonymous";
     private static final int REQUEST_PICK_IMAGE = 1;
     private static final double MAX_LINEAR_DIMENSION = 500.0;
+    private static String IMAGE_FILE_PREFIX = "chathub-";
     private String mUsername;
     private String mPhotoUrl;
     private SharedPreferences mSharedPreferences;
     private GoogleApiClient mGoogleApiClient;
 
-    private ImageButton mImageButton;
     private FloatingActionButton mSendButton;
     private RecyclerView mMessageRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
@@ -94,8 +95,9 @@ public class MainActivity extends AppCompatActivity
     private FirebaseAuth mAuth;
     private FirebaseUser mUser;
 
-    //Adapter
-    private FirebaseRecyclerAdapter<ChatMessage, MessageUtil.MessageViewHolder> mFirebaseAdapter;
+    private FirebaseRecyclerAdapter<ChatMessage, MessageUtil.MessageViewHolder>
+            mFirebaseAdapter;
+    private ImageButton mImageButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -131,6 +133,13 @@ public class MainActivity extends AppCompatActivity
 
         mProgressBar.setVisibility(ProgressBar.INVISIBLE);
 
+        mFirebaseAdapter = MessageUtil.getFirebaseAdapter(this,
+                this,  /* MessageLoadListener */
+                mLinearLayoutManager,
+                mMessageRecyclerView);
+
+        mMessageRecyclerView.setAdapter(mFirebaseAdapter);
+
         mMessageEditText = (EditText) findViewById(R.id.messageEditText);
         mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(MSG_LENGTH_LIMIT)});
         mMessageEditText.addTextChangedListener(new TextWatcher() {
@@ -152,21 +161,15 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        mFirebaseAdapter = MessageUtil.getFirebaseAdapter(this,
-                this, /*MessageLoadListener */
-                mLinearLayoutManager,
-                mMessageRecyclerView);
-
-        mMessageRecyclerView.setAdapter(mFirebaseAdapter);
-
         mSendButton = (FloatingActionButton) findViewById(R.id.sendButton);
         mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
                 // Send messages on click.
+                //Send messages on click.
                 mMessageRecyclerView.scrollToPosition(0);
-                ChatMessage chatMessage = new ChatMessage(mMessageEditText.getText().toString(),
+                ChatMessage chatMessage = new
+                        ChatMessage(mMessageEditText.getText().toString(),
                         mUsername,
                         mPhotoUrl);
                 MessageUtil.send(chatMessage);
@@ -175,17 +178,12 @@ public class MainActivity extends AppCompatActivity
         });
 
         mImageButton = (ImageButton) findViewById(R.id.shareImageButton);
-        mImageButton.setOnClickListener(new View.OnClickListener(){
+        mImageButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v){
+            public void onClick(View v) {
                 pickImage();
             }
         });
-    }
-
-    @Override
-    public void onLoadComplete() {
-        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
     }
 
     @Override
@@ -239,12 +237,60 @@ public class MainActivity extends AppCompatActivity
         Toast.makeText(this, "Google Play Services error.", Toast.LENGTH_SHORT).show();
     }
 
-    private void createMessage(Uri uri){
-        if (uri == null) Log.e(TAG, "Could not create image with null uri");
+    @Override
+    public void onLoadComplete() {
+        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+    }
+
+    private void pickImage() {
+        // ACTION_OPEN_DOCUMENT is the intent to choose a file via the system's file browser
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+
+        // Filter to only show results that can be "opened"
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+
+        // Filter to show only images, using the image MIME data type.
+        intent.setType("image/*");
+
+        startActivityForResult(intent, REQUEST_PICK_IMAGE);
+
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Log.d(TAG, "onActivityResult: request=" + requestCode + ", result=" + resultCode);
+
+        if (requestCode == REQUEST_PICK_IMAGE && resultCode == Activity.RESULT_OK) {
+            // Process selected image here
+            // The document selected by the user won't be returned in the intent.
+            // Instead, a URI to that document will be contained in the return intent
+            // provided to this method as a parameter.
+            // Pull that URI using resultData.getData().
+            if (data != null) {
+                Uri uri = data.getData();
+                Log.i(TAG, "Uri: " + uri.toString());
+
+                // Resize if too big for messaging
+                Bitmap bitmap = getBitmapForUri(uri);
+                Bitmap resizedBitmap = scaleImage(bitmap);
+                if (bitmap != resizedBitmap) {
+                    uri = savePhotoImage(resizedBitmap);
+                }
+
+                createImageMessage(uri);
+            }  else {
+                Log.e(TAG, "Cannot get image for uploading");
+            }
+        }
+    }
+
+    private void createImageMessage(Uri uri) {
+        if (uri == null) Log.e(TAG, "Could not create image message with null uri");
 
         final StorageReference imageReference = MessageUtil.getImageStorageReference(mUser, uri);
         UploadTask uploadTask = imageReference.putFile(uri);
-
+        // Register observers to listen for when task is done or if it fails
         uploadTask.addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception exception) {
@@ -256,47 +302,75 @@ public class MainActivity extends AppCompatActivity
                 ChatMessage chatMessage = new
                         ChatMessage(mMessageEditText.getText().toString(),
                         mUsername,
-                        mPhotoUrl,
-                        imageReference.toString());
+                        mPhotoUrl, imageReference.toString());
                 MessageUtil.send(chatMessage);
                 mMessageEditText.setText("");
             }
         });
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data){
-        super.onActivityResult(requestCode, resultCode, data);
-        Log.d(TAG, "onActivityResult: request= " + requestCode + ", result=" + resultCode);
+    private Bitmap scaleImage(Bitmap bitmap) {
+        int originalHeight = bitmap.getHeight();
+        int originalWidth = bitmap.getWidth();
+        double scaleFactor =  MAX_LINEAR_DIMENSION / (double)(originalHeight + originalWidth);
 
-        if (requestCode == REQUEST_PICK_IMAGE && resultCode == Activity.RESULT_OK){
-            //process selected image here
-
-            if (data != null){
-                Uri uri= data.getData();
-                Log.i(TAG, "Uri: " + uri.toString());
-                //resize if image is too big
-                Bitmap bitmap= ImageUtil.getBitmapForUri(uri);
-                Bitmap resizedBitmap= ImageUtil.scaleImage(bitmap);
-                if (bitmap != resizedBitmap){
-                    uri = ImageUtil.savePhotoImage(resizedBitmap);
-                }
-                createMessage(uri);
-            }
-
-            else{
-                Log.e(TAG, "Cannot get image for uploading");
-            }
+        // We only want to scale down images, not scale upwards
+        if (scaleFactor < 1.0) {
+            int targetWidth = (int) Math.round(originalWidth * scaleFactor);
+            int targetHeight = (int) Math.round(originalHeight * scaleFactor);
+            return Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true);
+        } else {
+            return bitmap;
         }
     }
 
-    private void pickImage(){
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+    private Uri savePhotoImage(Bitmap imageBitmap) {
+        File photoFile = null;
+        try {
+            photoFile = createImageFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (photoFile == null) {
+            Log.d(TAG, "Error creating media file");
+            return null;
+        }
 
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-
-        intent.setType("image/*");
-
-        startActivityForResult(intent, REQUEST_PICK_IMAGE);
+        try {
+            FileOutputStream fos = new FileOutputStream(photoFile);
+            imageBitmap.compress(Bitmap.CompressFormat.PNG, 90, fos);
+            fos.close();
+        } catch (FileNotFoundException e) {
+            Log.d(TAG, "File not found: " + e.getMessage());
+        } catch (IOException e) {
+            Log.d(TAG, "Error accessing file: " + e.getMessage());
+        }
+        return Uri.fromFile(photoFile);
     }
+
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
+        String imageFileNamePrefix = IMAGE_FILE_PREFIX + timeStamp;
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+
+        File imageFile = File.createTempFile(
+                imageFileNamePrefix,    /* prefix */
+                ".jpg",                 /* suffix */
+                storageDir              /* directory */
+        );
+        return imageFile;
+    }
+
+    private Bitmap getBitmapForUri(Uri imageUri) {
+        Bitmap bitmap = null;
+        try {
+            bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return bitmap;
+    }
+
+
 }
