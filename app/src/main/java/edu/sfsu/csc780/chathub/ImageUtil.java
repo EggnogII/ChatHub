@@ -1,5 +1,6 @@
 package edu.sfsu.csc780.chathub;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Environment;
@@ -73,7 +74,7 @@ public class ImageUtil {
         //Create Image File Name
         String timeStamp = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
         String imageFileNamePrefix= IMAGE_FILE_PREFIX + timeStamp;
-        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File storageDir = new Context().getExternalFilesDir(Environment.DIRECTORY_PICTURES);
 
         File imageFile = File.createTempFile(
                 imageFileNamePrefix,
