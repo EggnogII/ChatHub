@@ -78,8 +78,7 @@ public class MainActivity extends AppCompatActivity
     public static final int MSG_LENGTH_LIMIT = 10;
     public static final String ANONYMOUS = "anonymous";
     private static final int REQUEST_PICK_IMAGE = 1;
-    private static final double MAX_LINEAR_DIMENSION = 500.0;
-    private static String IMAGE_FILE_PREFIX = "chathub-";
+
     private String mUsername;
     private String mPhotoUrl;
     private SharedPreferences mSharedPreferences;
@@ -272,10 +271,10 @@ public class MainActivity extends AppCompatActivity
                 Log.i(TAG, "Uri: " + uri.toString());
 
                 // Resize if too big for messaging
-                Bitmap bitmap = getBitmapForUri(uri);
-                Bitmap resizedBitmap = scaleImage(bitmap);
+                Bitmap bitmap = ImageUtil.getBitmapForUri(this, uri);
+                Bitmap resizedBitmap = ImageUtil.scaleImage(bitmap);
                 if (bitmap != resizedBitmap) {
-                    uri = savePhotoImage(resizedBitmap);
+                    uri = ImageUtil.savePhotoImage(this, resizedBitmap);
                 }
 
                 createImageMessage(uri);
@@ -308,69 +307,5 @@ public class MainActivity extends AppCompatActivity
             }
         });
     }
-
-    private Bitmap scaleImage(Bitmap bitmap) {
-        int originalHeight = bitmap.getHeight();
-        int originalWidth = bitmap.getWidth();
-        double scaleFactor =  MAX_LINEAR_DIMENSION / (double)(originalHeight + originalWidth);
-
-        // We only want to scale down images, not scale upwards
-        if (scaleFactor < 1.0) {
-            int targetWidth = (int) Math.round(originalWidth * scaleFactor);
-            int targetHeight = (int) Math.round(originalHeight * scaleFactor);
-            return Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true);
-        } else {
-            return bitmap;
-        }
-    }
-
-    private Uri savePhotoImage(Bitmap imageBitmap) {
-        File photoFile = null;
-        try {
-            photoFile = createImageFile();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        if (photoFile == null) {
-            Log.d(TAG, "Error creating media file");
-            return null;
-        }
-
-        try {
-            FileOutputStream fos = new FileOutputStream(photoFile);
-            imageBitmap.compress(Bitmap.CompressFormat.PNG, 90, fos);
-            fos.close();
-        } catch (FileNotFoundException e) {
-            Log.d(TAG, "File not found: " + e.getMessage());
-        } catch (IOException e) {
-            Log.d(TAG, "Error accessing file: " + e.getMessage());
-        }
-        return Uri.fromFile(photoFile);
-    }
-
-    private File createImageFile() throws IOException {
-        // Create an image file name
-        String timeStamp = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
-        String imageFileNamePrefix = IMAGE_FILE_PREFIX + timeStamp;
-        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-
-        File imageFile = File.createTempFile(
-                imageFileNamePrefix,    /* prefix */
-                ".jpg",                 /* suffix */
-                storageDir              /* directory */
-        );
-        return imageFile;
-    }
-
-    private Bitmap getBitmapForUri(Uri imageUri) {
-        Bitmap bitmap = null;
-        try {
-            bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return bitmap;
-    }
-
 
 }
