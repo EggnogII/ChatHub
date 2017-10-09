@@ -16,7 +16,9 @@
 package edu.sfsu.csc780.chathub.ui;
 
 import android.app.Activity;
+import android.app.LoaderManager;
 import android.content.Intent;
+import android.content.Loader;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -97,6 +99,7 @@ public class MainActivity extends AppCompatActivity
     private FirebaseRecyclerAdapter<ChatMessage, MessageUtil.MessageViewHolder>
             mFirebaseAdapter;
     private ImageButton mImageButton;
+    private ImageButton mLocationButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -183,6 +186,16 @@ public class MainActivity extends AppCompatActivity
                 pickImage();
             }
         });
+
+        mLocationButton = (ImageButton) findViewById(R.id.locationButton);
+        mLocationButton.setOnClickListener(new View.OnClickListener(){
+
+            public void onClick(View v){
+                //TODO
+                loadMap();
+            }
+
+        });
     }
 
     @Override
@@ -253,6 +266,30 @@ public class MainActivity extends AppCompatActivity
 
         startActivityForResult(intent, REQUEST_PICK_IMAGE);
 
+    }
+
+    private void loadMap() {
+        Loader<Bitmap> loader = getSupportLoaderManager().initLoader(0, null,
+                new LoaderManager.LoaderCallbacks<Bitmap>() {
+
+                    @Override
+                    public Loader<Bitmap> onCreateLoader(final int id, final Bundle args){
+                        return null;
+                    }
+
+                    @Override
+                    public void onLoadFinished(final Loader<Bitmap> loader, final Bitmap result){
+
+                    }
+
+                    @Override
+                    public void onLoaderReset(final Loader<Bitmap> loader){
+
+                    }
+
+                });
+
+        loader.forceLoad();
     }
 
     @Override
