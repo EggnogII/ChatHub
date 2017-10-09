@@ -1,0 +1,1880 @@
+From 6e26eb43dd88d14376e205de276098b04e8e0638 Mon Sep 17 00:00:00 2001
+From: Imran <imranbirfan@gmail.com>
+Date: Wed, 4 Oct 2017 23:26:43 -0700
+Subject: [PATCH] Fixed Refactoring Issues, will rebranch after exercise.
+
+Created JUnit Test
+
+Created Instrumented Android Test
+
+Created Espresso Test
+---
+ app/build.gradle                                   |   3 +-
+ .../csc780/chathub/ExampleInstrumentedTest.java    |  53 ++++
+ .../csc780/chathub/MainActivityEspressoTest.java   |  18 ++
+ .../java/edu/sfsu/csc780/chathub/MessageUtil.java  | 158 +++++++++++
+ .../edu/sfsu/csc780/chathub/model/ChatMessage.java |  71 +++++
+ .../java/edu/sfsu/csc780/chathub/ui/ImageUtil.java |  90 +++++++
+ .../edu/sfsu/csc780/chathub/ui/MainActivity.java   | 297 +++++++++++++++++++++
+ .../edu/sfsu/csc780/chathub/ui/SignInActivity.java | 143 ++++++++++
+ .../java/edu/sfsu/csc780/chathub/ui/ImageUtil.java |  90 +++++++
+ .../edu/sfsu/csc780/chathub/ui/MainActivity.java   |  73 +----
+ app/src/main/res/drawable/android_bigbox.png       | Bin 0 -> 27048 bytes
+ app/src/main/res/drawable/android_smallbox.png     | Bin 0 -> 8614 bytes
+ .../edu/sfsu/csc780/chathub/ExampleUnitTest.java   |  55 ++++
+ 13 files changed, 981 insertions(+), 70 deletions(-)
+ create mode 100644 app/src/androidTest/java/edu/sfsu/csc780/chathub/ExampleInstrumentedTest.java
+ create mode 100644 app/src/androidTest/java/edu/sfsu/csc780/chathub/MessageUtil.java
+ create mode 100644 app/src/androidTest/java/edu/sfsu/csc780/chathub/model/ChatMessage.java
+ create mode 100644 app/src/androidTest/java/edu/sfsu/csc780/chathub/ui/ImageUtil.java
+ create mode 100644 app/src/androidTest/java/edu/sfsu/csc780/chathub/ui/MainActivity.java
+ create mode 100644 app/src/androidTest/java/edu/sfsu/csc780/chathub/ui/SignInActivity.java
+ create mode 100644 app/src/main/java/edu/sfsu/csc780/chathub/ui/ImageUtil.java
+ create mode 100644 app/src/main/res/drawable/android_bigbox.png
+ create mode 100644 app/src/main/res/drawable/android_smallbox.png
+ create mode 100644 app/src/test/java/edu/sfsu/csc780/chathub/ExampleUnitTest.java
+
+diff --git a/app/build.gradle b/app/build.gradle
+index af10875..26e91b2 100644
+--- a/app/build.gradle
++++ b/app/build.gradle
+@@ -61,8 +61,9 @@ dependencies {
+     androidTestCompile 'com.android.support.test.espresso:espresso-core:2.2.2'
+     androidTestCompile 'com.android.support.test:runner:0.5'
+     androidTestCompile 'com.android.support:support-annotations:25.1.0'
++
+     testCompile 'junit:junit:4.12'
+-    testCompile "org.mockito:mockito-core:2.10.0"
++    testCompile 'org.mockito:mockito-core:2.10.0'
+ }
+ 
+ apply plugin: 'com.google.gms.google-services'
+diff --git a/app/src/androidTest/java/edu/sfsu/csc780/chathub/ExampleInstrumentedTest.java b/app/src/androidTest/java/edu/sfsu/csc780/chathub/ExampleInstrumentedTest.java
+new file mode 100644
+index 0000000..2b2ba7f
+--- /dev/null
++++ b/app/src/androidTest/java/edu/sfsu/csc780/chathub/ExampleInstrumentedTest.java
+@@ -0,0 +1,53 @@
++package edu.sfsu.csc780.chathub;
++
++import android.graphics.Bitmap;
++
++import android.content.Context;
++import android.graphics.Bitmap;
++import android.graphics.BitmapFactory;
++import android.support.test.InstrumentationRegistry;
++
++import org.junit.Before;
++import org.junit.Test;
++
++import edu.sfsu.csc780.chathub.ui.ImageUtil;
++
++import static junit.framework.Assert.assertEquals;
++import static junit.framework.Assert.assertTrue;
++import static org.junit.Assert.assertNotEquals;
++
++/**
++ * Created by bees on 10/4/17.
++ */
++
++public class ExampleInstrumentedTest {
++
++    private static final int LARGE_DRAWABLE = R.drawable.android_bigbox;
++    private static final int SMALL_DRAWABLE = R.drawable.android_smallbox;
++    private Context mContext;
++
++    @Test
++    public void scaleBitmap_verifyLarge() throws Exception {
++        Bitmap bitmap = BitmapFactory
++                .decodeResource(mContext.getResources(), LARGE_DRAWABLE);
++        Bitmap resizedBitmap = ImageUtil.scaleImage(bitmap);
++        assertNotEquals(bitmap, resizedBitmap);
++        assertTrue((resizedBitmap.getHeight() + resizedBitmap.getWidth())
++            <= ImageUtil.MAX_LINEAR_DIMENSION);
++    }
++
++    @Test
++    public void scaleBitmap_verifySmall() throws Exception {
++        Bitmap bitmap = BitmapFactory
++                .decodeResource(mContext.getResources(), SMALL_DRAWABLE);
++        Bitmap resizedBitmap = ImageUtil.scaleImage(bitmap);
++        assertEquals(bitmap, resizedBitmap);
++        assertTrue((resizedBitmap.getHeight() + resizedBitmap.getWidth())
++            <= ImageUtil.MAX_LINEAR_DIMENSION);
++    }
++
++    @Before
++    public void setup(){
++        mContext = InstrumentationRegistry.getTargetContext();
++    }
++}
+diff --git a/app/src/androidTest/java/edu/sfsu/csc780/chathub/MainActivityEspressoTest.java b/app/src/androidTest/java/edu/sfsu/csc780/chathub/MainActivityEspressoTest.java
+index 3385dc8..594051e 100644
+--- a/app/src/androidTest/java/edu/sfsu/csc780/chathub/MainActivityEspressoTest.java
++++ b/app/src/androidTest/java/edu/sfsu/csc780/chathub/MainActivityEspressoTest.java
+@@ -21,10 +21,19 @@ import android.support.test.runner.AndroidJUnit4;
+ import android.test.suitebuilder.annotation.LargeTest;
+ 
+ import org.junit.Rule;
++import org.junit.Test;
+ import org.junit.runner.RunWith;
+ 
+ import edu.sfsu.csc780.chathub.ui.MainActivity;
+ 
++import static android.support.test.espresso.Espresso.onView;
++import static android.support.test.espresso.action.ViewActions.click;
++import static android.support.test.espresso.action.ViewActions.closeSoftKeyboard;
++import static android.support.test.espresso.action.ViewActions.typeText;
++import static android.support.test.espresso.assertion.ViewAssertions.matches;
++import static android.support.test.espresso.matcher.ViewMatchers.withId;
++import static android.support.test.espresso.matcher.ViewMatchers.withText;
++
+ @RunWith(AndroidJUnit4.class)
+ @LargeTest
+ public class MainActivityEspressoTest {
+@@ -34,4 +43,13 @@ public class MainActivityEspressoTest {
+             new ActivityTestRule<>(MainActivity.class);
+ 
+     // Add instrumentation test here
++    @Test
++    public void ensureMessageFieldClearsAfterSend(){
++        onView(withId(R.id.messageEditText))
++                .perform(typeText("Testing 1, 2, 3"), closeSoftKeyboard());
++
++        onView(withId(R.id.sendButton)).perform(click());
++
++        onView(withId(R.id.messageEditText)).check(matches(withText("")));
++    }
+ }
+diff --git a/app/src/androidTest/java/edu/sfsu/csc780/chathub/MessageUtil.java b/app/src/androidTest/java/edu/sfsu/csc780/chathub/MessageUtil.java
+new file mode 100644
+index 0000000..551c8ae
+--- /dev/null
++++ b/app/src/androidTest/java/edu/sfsu/csc780/chathub/MessageUtil.java
+@@ -0,0 +1,158 @@
++package edu.sfsu.csc780.chathub;
++
++import android.app.Activity;
++import android.graphics.Bitmap;
++import android.net.Uri;
++import android.support.annotation.NonNull;
++import android.support.v4.content.ContextCompat;
++import android.support.v7.widget.LinearLayoutManager;
++import android.support.v7.widget.RecyclerView;
++import android.util.Log;
++import android.view.View;
++import android.widget.ImageView;
++import android.widget.TextView;
++
++import com.bumptech.glide.Glide;
++import com.bumptech.glide.request.animation.GlideAnimation;
++import com.bumptech.glide.request.target.SimpleTarget;
++import com.firebase.ui.database.FirebaseRecyclerAdapter;
++import com.google.android.gms.tasks.OnFailureListener;
++import com.google.android.gms.tasks.OnSuccessListener;
++import com.google.firebase.auth.FirebaseAuth;
++import com.google.firebase.auth.FirebaseUser;
++import com.google.firebase.database.DatabaseReference;
++import com.google.firebase.database.FirebaseDatabase;
++import com.google.firebase.storage.FirebaseStorage;
++import com.google.firebase.storage.StorageReference;
++
++import java.util.Calendar;
++
++import de.hdodenhof.circleimageview.CircleImageView;
++import edu.sfsu.csc780.chathub.model.ChatMessage;
++
++/**
++ * Created by cjkriese on 2/17/17.
++ */
++
++public class MessageUtil {
++    private static final String LOG_TAG = MessageUtil.class.getSimpleName();
++    public static final String MESSAGES_CHILD = "messages";
++    private static DatabaseReference sFirebaseDatabaseReference =
++            FirebaseDatabase.getInstance().getReference();
++    private static MessageLoadListener sAdapterListener;
++    private static FirebaseAuth sFirebaseAuth;
++    private static FirebaseStorage sStorage = FirebaseStorage.getInstance();
++
++    public interface MessageLoadListener { public void onLoadComplete(); }
++
++    public static void send(ChatMessage chatMessage) {
++        sFirebaseDatabaseReference.child(MESSAGES_CHILD).push().setValue(chatMessage);
++    }
++
++    public static class MessageViewHolder extends RecyclerView.ViewHolder {
++        public TextView messageTextView;
++        public TextView messengerTextView;
++        public CircleImageView messengerImageView;
++        public ImageView messageImageView;
++        public MessageViewHolder(View v) {
++            super(v);
++            messageTextView = (TextView) itemView.findViewById(R.id.messageTextView);
++            messengerTextView = (TextView) itemView.findViewById(R.id.messengerTextView);
++            messengerImageView =
++                    (CircleImageView) itemView.findViewById(R.id.messengerImageView);
++            messageImageView = (ImageView) itemView.findViewById(R.id.messageImageView);
++        }
++    }
++
++    public static FirebaseRecyclerAdapter getFirebaseAdapter(final Activity activity,
++                                                             MessageLoadListener listener,
++                                                             final LinearLayoutManager linearManager,
++                                                             final RecyclerView recyclerView) {
++        sAdapterListener = listener;
++        final FirebaseRecyclerAdapter adapter =
++                new FirebaseRecyclerAdapter<ChatMessage, MessageViewHolder>(
++                        ChatMessage.class,
++                        R.layout.item_message,
++                        MessageViewHolder.class,
++                        sFirebaseDatabaseReference.child(MESSAGES_CHILD)) {
++                    @Override
++                    protected void populateViewHolder(final MessageViewHolder viewHolder,
++                                                      ChatMessage chatMessage, int position) {
++                        sAdapterListener.onLoadComplete();
++                        viewHolder.messageTextView.setText(chatMessage.getText());
++                        viewHolder.messengerTextView.setText(chatMessage.getName());
++                        if (chatMessage.getPhotoUrl() == null) {
++                            viewHolder.messengerImageView
++                                    .setImageDrawable(ContextCompat
++                                            .getDrawable(activity,
++                                                    R.drawable.ic_account_circle_black_36dp));
++                        } else {
++                            SimpleTarget target = new SimpleTarget<Bitmap>() {
++                                @Override
++                                public void onResourceReady(Bitmap bitmap, GlideAnimation glideAnimation) {
++                                    viewHolder.messengerImageView.setImageBitmap(bitmap);
++                                }
++                            };
++                            Glide.with(activity)
++                                    .load(chatMessage.getPhotoUrl())
++                                    .asBitmap()
++                                    .into(target);
++                        }
++
++                        if (chatMessage.getImageUrl() != null) {
++                            //Set view visibilities for a image message
++                            viewHolder.messageImageView.setVisibility(View.VISIBLE);
++                            viewHolder.messageTextView.setVisibility(View.GONE);
++                            // load image for message
++                            try {
++                                final StorageReference gsReference =
++                                        sStorage.getReferenceFromUrl(chatMessage.getImageUrl());
++                                gsReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
++                                    @Override
++                                    public void onSuccess(Uri uri) {
++                                        Glide.with(activity)
++                                                .load(uri)
++                                                .into(viewHolder.messageImageView);
++                                    }
++                                }).addOnFailureListener(new OnFailureListener() {
++                                    @Override
++                                    public void onFailure(@NonNull Exception exception) {
++                                        Log.e(LOG_TAG, "Could not load image for message", exception);
++                                    }
++                                });
++                            } catch (IllegalArgumentException e) {
++                                viewHolder.messageTextView.setText("Error loading image");
++                                Log.e(LOG_TAG, e.getMessage() + " : " + chatMessage.getImageUrl());
++                            }
++                        } else {
++                            //Set view visibilities for a text message
++                            viewHolder.messageImageView.setVisibility(View.GONE);
++                            viewHolder.messageTextView.setVisibility(View.VISIBLE);
++                        }
++
++                    }
++                };
++        adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
++            @Override
++            public void onItemRangeInserted(int positionStart, int itemCount) {
++                super.onItemRangeInserted(positionStart, itemCount);
++                int messageCount = adapter.getItemCount();
++                int lastVisiblePosition = linearManager.findLastCompletelyVisibleItemPosition();
++                if (lastVisiblePosition == -1 ||
++                        (positionStart >= (messageCount - 1) &&
++                                lastVisiblePosition == (positionStart - 1))) {
++                    recyclerView.scrollToPosition(positionStart);
++                }
++            }
++        });
++        return adapter;
++    }
++
++    public static StorageReference getImageStorageReference(FirebaseUser user, Uri uri) {
++        //Create a blob storage reference with path : bucket/userId/timeMs/filename
++        long nowMs = Calendar.getInstance().getTimeInMillis();
++
++        return sStorage.getReference().child(user.getUid() + "/" + nowMs + "/" + uri
++                .getLastPathSegment());
++    }
++}
+diff --git a/app/src/androidTest/java/edu/sfsu/csc780/chathub/model/ChatMessage.java b/app/src/androidTest/java/edu/sfsu/csc780/chathub/model/ChatMessage.java
+new file mode 100644
+index 0000000..f813273
+--- /dev/null
++++ b/app/src/androidTest/java/edu/sfsu/csc780/chathub/model/ChatMessage.java
+@@ -0,0 +1,71 @@
++/**
++ * Copyright Google Inc. All Rights Reserved.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package edu.sfsu.csc780.chathub.model;
++
++public class ChatMessage {
++
++    private String text;
++    private String name;
++    private String photoUrl;
++
++    public String getImageUrl() {
++        return imageUrl;
++    }
++
++    public void setImageUrl(String imageUrl) {
++        this.imageUrl = imageUrl;
++    }
++
++    private String imageUrl;
++
++    public ChatMessage() {
++    }
++
++    public ChatMessage(String text, String name, String photoUrl) {
++        this.text = text;
++        this.name = name;
++        this.photoUrl = photoUrl;
++    }
++
++    public ChatMessage(String text, String name, String photoUrl, String imageUrl) {
++        this(text, name, photoUrl);
++        this.imageUrl = imageUrl;
++    }
++
++    public String getText() {
++        return text;
++    }
++
++    public void setText(String text) {
++        this.text = text;
++    }
++
++    public String getName() {
++        return name;
++    }
++
++    public void setName(String name) {
++        this.name = name;
++    }
++
++    public String getPhotoUrl() {
++        return photoUrl;
++    }
++
++    public void setPhotoUrl(String photoUrl) {
++        this.photoUrl = photoUrl;
++    }
++}
+diff --git a/app/src/androidTest/java/edu/sfsu/csc780/chathub/ui/ImageUtil.java b/app/src/androidTest/java/edu/sfsu/csc780/chathub/ui/ImageUtil.java
+new file mode 100644
+index 0000000..69181c8
+--- /dev/null
++++ b/app/src/androidTest/java/edu/sfsu/csc780/chathub/ui/ImageUtil.java
+@@ -0,0 +1,90 @@
++package edu.sfsu.csc780.chathub.ui;
++
++import android.content.Context;
++import android.graphics.Bitmap;
++import android.net.Uri;
++import android.os.Environment;
++import android.provider.MediaStore;
++import android.util.Log;
++
++import java.io.File;
++import java.io.FileNotFoundException;
++import java.io.FileOutputStream;
++import java.io.IOException;
++import java.text.SimpleDateFormat;
++import java.util.Date;
++
++import static com.bumptech.glide.gifdecoder.GifHeaderParser.TAG;
++
++/**
++ * Created by bees on 10/4/17.
++ */
++
++public class ImageUtil {
++
++    public static final double MAX_LINEAR_DIMENSION = 500.0;
++    public static String IMAGE_FILE_PREFIX = "chathub-";
++
++    public static Bitmap scaleImage(Bitmap bitmap) {
++        int originalHeight = bitmap.getHeight();
++        int originalWidth = bitmap.getWidth();
++        double scaleFactor =  MAX_LINEAR_DIMENSION / (double)(originalHeight + originalWidth);
++
++        // We only want to scale down images, not scale upwards
++        if (scaleFactor < 1.0) {
++            int targetWidth = (int) Math.round(originalWidth * scaleFactor);
++            int targetHeight = (int) Math.round(originalHeight * scaleFactor);
++            return Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true);
++        } else {
++            return bitmap;
++        }
++    }
++
++    public static Uri savePhotoImage(Context context, Bitmap imageBitmap) {
++        File photoFile = null;
++        try {
++            photoFile = createImageFile(context);
++        } catch (IOException e) {
++            e.printStackTrace();
++        }
++        if (photoFile == null) {
++            Log.d(TAG, "Error creating media file");
++            return null;
++        }
++
++        try {
++            FileOutputStream fos = new FileOutputStream(photoFile);
++            imageBitmap.compress(Bitmap.CompressFormat.PNG, 90, fos);
++            fos.close();
++        } catch (FileNotFoundException e) {
++            Log.d(TAG, "File not found: " + e.getMessage());
++        } catch (IOException e) {
++            Log.d(TAG, "Error accessing file: " + e.getMessage());
++        }
++        return Uri.fromFile(photoFile);
++    }
++
++    public static File createImageFile(Context context) throws IOException {
++        // Create an image file name
++        String timeStamp = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
++        String imageFileNamePrefix = IMAGE_FILE_PREFIX + timeStamp;
++        File storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
++
++        File imageFile = File.createTempFile(
++                imageFileNamePrefix,    /* prefix */
++                ".jpg",                 /* suffix */
++                storageDir              /* directory */
++        );
++        return imageFile;
++    }
++
++    public static Bitmap getBitmapForUri(Context context, Uri imageUri) {
++        Bitmap bitmap = null;
++        try {
++            bitmap = MediaStore.Images.Media.getBitmap(context.getContentResolver(), imageUri);
++        } catch (IOException e) {
++            e.printStackTrace();
++        }
++        return bitmap;
++    }
++}
+diff --git a/app/src/androidTest/java/edu/sfsu/csc780/chathub/ui/MainActivity.java b/app/src/androidTest/java/edu/sfsu/csc780/chathub/ui/MainActivity.java
+new file mode 100644
+index 0000000..7e35cbe
+--- /dev/null
++++ b/app/src/androidTest/java/edu/sfsu/csc780/chathub/ui/MainActivity.java
+@@ -0,0 +1,297 @@
++/**
++ * Copyright Google Inc. All Rights Reserved.
++ * <p/>
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * <p/>
++ * http://www.apache.org/licenses/LICENSE-2.0
++ * <p/>
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package edu.sfsu.csc780.chathub.ui;
++
++import android.app.Activity;
++import android.content.Intent;
++import android.content.SharedPreferences;
++import android.graphics.Bitmap;
++import android.net.Uri;
++import android.os.Bundle;
++import android.preference.PreferenceManager;
++import android.support.annotation.NonNull;
++import android.support.design.widget.FloatingActionButton;
++import android.support.v7.app.AppCompatActivity;
++import android.support.v7.widget.LinearLayoutManager;
++import android.support.v7.widget.RecyclerView;
++import android.text.Editable;
++import android.text.InputFilter;
++import android.text.TextWatcher;
++import android.util.Log;
++import android.view.Menu;
++import android.view.MenuInflater;
++import android.view.MenuItem;
++import android.view.View;
++import android.widget.EditText;
++import android.widget.ImageButton;
++import android.widget.ProgressBar;
++import android.widget.Toast;
++
++import com.firebase.ui.database.FirebaseRecyclerAdapter;
++import com.google.android.gms.auth.api.Auth;
++import com.google.android.gms.common.ConnectionResult;
++import com.google.android.gms.common.api.GoogleApiClient;
++import com.google.android.gms.tasks.OnFailureListener;
++import com.google.android.gms.tasks.OnSuccessListener;
++import com.google.firebase.auth.FirebaseAuth;
++import com.google.firebase.auth.FirebaseUser;
++import com.google.firebase.storage.StorageReference;
++import com.google.firebase.storage.UploadTask;
++
++import edu.sfsu.csc780.chathub.MessageUtil;
++import edu.sfsu.csc780.chathub.R;
++import edu.sfsu.csc780.chathub.model.ChatMessage;
++
++public class MainActivity extends AppCompatActivity
++        implements GoogleApiClient.OnConnectionFailedListener, MessageUtil.MessageLoadListener  {
++
++    private static final String TAG = "MainActivity";
++    public static final String MESSAGES_CHILD = "messages";
++    private static final int REQUEST_INVITE = 1;
++    public static final int MSG_LENGTH_LIMIT = 10;
++    public static final String ANONYMOUS = "anonymous";
++    private static final int REQUEST_PICK_IMAGE = 1;
++
++    private String mUsername;
++    private String mPhotoUrl;
++    private SharedPreferences mSharedPreferences;
++    private GoogleApiClient mGoogleApiClient;
++
++    private FloatingActionButton mSendButton;
++    private RecyclerView mMessageRecyclerView;
++    private LinearLayoutManager mLinearLayoutManager;
++    private ProgressBar mProgressBar;
++    private EditText mMessageEditText;
++
++    // Firebase instance variables
++    private FirebaseAuth mAuth;
++    private FirebaseUser mUser;
++
++    private FirebaseRecyclerAdapter<ChatMessage, MessageUtil.MessageViewHolder>
++            mFirebaseAdapter;
++    private ImageButton mImageButton;
++
++    @Override
++    protected void onCreate(Bundle savedInstanceState) {
++        super.onCreate(savedInstanceState);
++        setContentView(R.layout.activity_main);
++        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
++        // Set default username is anonymous.
++        mUsername = ANONYMOUS;
++        //Initialize Auth
++        mAuth = FirebaseAuth.getInstance();
++        mUser = mAuth.getCurrentUser();
++        if (mUser == null) {
++            startActivity(new Intent(this, SignInActivity.class));
++            finish();
++            return;
++        } else {
++            mUsername = mUser.getDisplayName();
++            if (mUser.getPhotoUrl() != null) {
++                mPhotoUrl = mUser.getPhotoUrl().toString();
++            }
++        }
++        mGoogleApiClient = new GoogleApiClient.Builder(this)
++                .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
++                .addApi(Auth.GOOGLE_SIGN_IN_API)
++                .build();
++
++        // Initialize ProgressBar and RecyclerView.
++        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
++        mMessageRecyclerView = (RecyclerView) findViewById(R.id.messageRecyclerView);
++        mLinearLayoutManager = new LinearLayoutManager(this);
++        mLinearLayoutManager.setStackFromEnd(true);
++        mMessageRecyclerView.setLayoutManager(mLinearLayoutManager);
++
++        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
++
++        mFirebaseAdapter = MessageUtil.getFirebaseAdapter(this,
++                this,  /* MessageLoadListener */
++                mLinearLayoutManager,
++                mMessageRecyclerView);
++
++        mMessageRecyclerView.setAdapter(mFirebaseAdapter);
++
++        mMessageEditText = (EditText) findViewById(R.id.messageEditText);
++        mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(MSG_LENGTH_LIMIT)});
++        mMessageEditText.addTextChangedListener(new TextWatcher() {
++            @Override
++            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
++            }
++
++            @Override
++            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
++                if (charSequence.toString().trim().length() > 0) {
++                    mSendButton.setEnabled(true);
++                } else {
++                    mSendButton.setEnabled(false);
++                }
++            }
++
++            @Override
++            public void afterTextChanged(Editable editable) {
++            }
++        });
++
++        mSendButton = (FloatingActionButton) findViewById(R.id.sendButton);
++        mSendButton.setOnClickListener(new View.OnClickListener() {
++            @Override
++            public void onClick(View view) {
++                // Send messages on click.
++                //Send messages on click.
++                mMessageRecyclerView.scrollToPosition(0);
++                ChatMessage chatMessage = new
++                        ChatMessage(mMessageEditText.getText().toString(),
++                        mUsername,
++                        mPhotoUrl);
++                MessageUtil.send(chatMessage);
++                mMessageEditText.setText("");
++            }
++        });
++
++        mImageButton = (ImageButton) findViewById(R.id.shareImageButton);
++        mImageButton.setOnClickListener(new View.OnClickListener() {
++            @Override
++            public void onClick(View v) {
++                pickImage();
++            }
++        });
++    }
++
++    @Override
++    public void onStart() {
++        super.onStart();
++        // Check if user is signed in.
++        // TODO: Add code to check if user is signed in.
++    }
++
++    @Override
++    public void onPause() {
++        super.onPause();
++    }
++
++    @Override
++    public void onResume() {
++        super.onResume();
++    }
++
++    @Override
++    public void onDestroy() {
++        super.onDestroy();
++    }
++
++    @Override
++    public boolean onCreateOptionsMenu(Menu menu) {
++        MenuInflater inflater = getMenuInflater();
++        inflater.inflate(R.menu.main_menu, menu);
++        return true;
++    }
++
++    @Override
++    public boolean onOptionsItemSelected(MenuItem item) {
++        switch (item.getItemId()) {
++            case R.id.sign_out_menu:
++                mAuth.signOut();
++                Auth.GoogleSignInApi.signOut(mGoogleApiClient);
++                mUsername = ANONYMOUS;
++                startActivity(new Intent(this, SignInActivity.class));
++                return true;
++            default:
++                return super.onOptionsItemSelected(item);
++        }
++    }
++
++    @Override
++    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
++        // An unresolvable error has occurred and Google APIs (including Sign-In) will not
++        // be available.
++        Log.d(TAG, "onConnectionFailed:" + connectionResult);
++        Toast.makeText(this, "Google Play Services error.", Toast.LENGTH_SHORT).show();
++    }
++
++    @Override
++    public void onLoadComplete() {
++        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
++    }
++
++    private void pickImage() {
++        // ACTION_OPEN_DOCUMENT is the intent to choose a file via the system's file browser
++        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
++
++        // Filter to only show results that can be "opened"
++        intent.addCategory(Intent.CATEGORY_OPENABLE);
++
++        // Filter to show only images, using the image MIME data type.
++        intent.setType("image/*");
++
++        startActivityForResult(intent, REQUEST_PICK_IMAGE);
++
++    }
++
++    @Override
++    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
++        super.onActivityResult(requestCode, resultCode, data);
++        Log.d(TAG, "onActivityResult: request=" + requestCode + ", result=" + resultCode);
++
++        if (requestCode == REQUEST_PICK_IMAGE && resultCode == Activity.RESULT_OK) {
++            // Process selected image here
++            // The document selected by the user won't be returned in the intent.
++            // Instead, a URI to that document will be contained in the return intent
++            // provided to this method as a parameter.
++            // Pull that URI using resultData.getData().
++            if (data != null) {
++                Uri uri = data.getData();
++                Log.i(TAG, "Uri: " + uri.toString());
++
++                // Resize if too big for messaging
++                Bitmap bitmap = ImageUtil.getBitmapForUri(this, uri);
++                Bitmap resizedBitmap = ImageUtil.scaleImage(bitmap);
++                if (bitmap != resizedBitmap) {
++                    uri = ImageUtil.savePhotoImage(this, resizedBitmap);
++                }
++
++                createImageMessage(uri);
++            }  else {
++                Log.e(TAG, "Cannot get image for uploading");
++            }
++        }
++    }
++
++    private void createImageMessage(Uri uri) {
++        if (uri == null) Log.e(TAG, "Could not create image message with null uri");
++
++        final StorageReference imageReference = MessageUtil.getImageStorageReference(mUser, uri);
++        UploadTask uploadTask = imageReference.putFile(uri);
++        // Register observers to listen for when task is done or if it fails
++        uploadTask.addOnFailureListener(new OnFailureListener() {
++            @Override
++            public void onFailure(@NonNull Exception exception) {
++                Log.e(TAG, "Failed to upload image message");
++            }
++        }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
++            @Override
++            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
++                ChatMessage chatMessage = new
++                        ChatMessage(mMessageEditText.getText().toString(),
++                        mUsername,
++                        mPhotoUrl, imageReference.toString());
++                MessageUtil.send(chatMessage);
++                mMessageEditText.setText("");
++            }
++        });
++    }
++
++}
+diff --git a/app/src/androidTest/java/edu/sfsu/csc780/chathub/ui/SignInActivity.java b/app/src/androidTest/java/edu/sfsu/csc780/chathub/ui/SignInActivity.java
+new file mode 100644
+index 0000000..e42f1de
+--- /dev/null
++++ b/app/src/androidTest/java/edu/sfsu/csc780/chathub/ui/SignInActivity.java
+@@ -0,0 +1,143 @@
++/**
++ * Copyright Google Inc. All Rights Reserved.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package edu.sfsu.csc780.chathub.ui;
++
++import android.content.Intent;
++import android.os.Bundle;
++import android.support.annotation.NonNull;
++import android.support.v7.app.AppCompatActivity;
++import android.util.Log;
++import android.view.View;
++import android.widget.Toast;
++
++import com.google.android.gms.auth.api.Auth;
++import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
++import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
++import com.google.android.gms.auth.api.signin.GoogleSignInResult;
++import com.google.android.gms.common.ConnectionResult;
++import com.google.android.gms.common.SignInButton;
++import com.google.android.gms.common.api.GoogleApiClient;
++import com.google.android.gms.tasks.OnCompleteListener;
++import com.google.android.gms.tasks.Task;
++import com.google.firebase.auth.AuthCredential;
++import com.google.firebase.auth.AuthResult;
++import com.google.firebase.auth.FirebaseAuth;
++import com.google.firebase.auth.GoogleAuthProvider;
++
++import edu.sfsu.csc780.chathub.R;
++
++public class SignInActivity extends AppCompatActivity implements
++        GoogleApiClient.OnConnectionFailedListener, View.OnClickListener {
++
++    private static final String TAG = "SignInActivity";
++    private static final int RC_SIGN_IN = 9001;
++
++    private SignInButton mSignInButton;
++
++    private GoogleApiClient mGoogleApiClient;
++
++    // Firebase instance variables
++    private FirebaseAuth mAuth;
++
++    @Override
++    protected void onCreate(Bundle savedInstanceState) {
++        super.onCreate(savedInstanceState);
++        setContentView(R.layout.activity_sign_in);
++
++        // Assign fields
++        mSignInButton = (SignInButton) findViewById(R.id.sign_in_button);
++
++        // Set click listeners
++        mSignInButton.setOnClickListener(this);
++
++        // Configure Google Sign In
++        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
++                .requestIdToken(getString(R.string.default_web_client_id))
++                .requestEmail()
++                .build();
++        mGoogleApiClient = new GoogleApiClient.Builder(this)
++                .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
++                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
++                .build();
++
++        // Initialize FirebaseAuth
++        //Initialize Auth
++        mAuth = FirebaseAuth.getInstance();
++
++    }
++
++    private void signIn() {
++        Intent signInIntent =
++                Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
++        startActivityForResult(signInIntent, RC_SIGN_IN);
++    }
++
++    @Override
++    public void onClick(View v) {
++        switch (v.getId()) {
++            case R.id.sign_in_button:
++                signIn();
++                break;
++        }
++    }
++
++    @Override
++    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
++        // An unresolvable error has occurred and Google APIs (including Sign-In) will not
++        // be available.
++        Log.d(TAG, "onConnectionFailed:" + connectionResult);
++        Toast.makeText(this, "Google Play Services error.", Toast.LENGTH_SHORT).show();
++    }
++
++    @Override
++    public void onActivityResult(int requestCode, int resultCode, Intent data) {
++        super.onActivityResult(requestCode, resultCode, data);
++        // Handle the result of the sign-in activity
++        if (requestCode == RC_SIGN_IN) {
++            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
++            if (result.isSuccess()) {
++                // successful, now authenticate with Firebase
++                GoogleSignInAccount account = result.getSignInAccount();
++                firebaseAuthWithGoogle(account);
++            } else {
++                Log.e(TAG, "Google Sign In failed.");
++            }
++        }
++    }
++
++    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
++        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
++        mAuth.signInWithCredential(credential)
++                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
++                    @Override
++                    public void onComplete(@NonNull Task<AuthResult> task) {
++                        // Process the auth task result
++                        Log.d(TAG, "signInWithCredential:onComplete:" + task.isSuccessful());
++                        // If sign in fails, display a message to the user.
++                        // If sign in succeeds, start MainActivity and finish this activity
++                        if (!task.isSuccessful()) {
++                            Log.w(TAG, "signInWithCredential", task.getException());
++                            Toast.makeText(SignInActivity.this, "Authentication failed.",
++                                    Toast.LENGTH_SHORT).show();
++                        } else {
++                            startActivity(new Intent(SignInActivity.this, MainActivity.class));
++                            finish();
++                        }
++
++                    }
++                });
++    }
++}
+diff --git a/app/src/main/java/edu/sfsu/csc780/chathub/ui/ImageUtil.java b/app/src/main/java/edu/sfsu/csc780/chathub/ui/ImageUtil.java
+new file mode 100644
+index 0000000..69181c8
+--- /dev/null
++++ b/app/src/main/java/edu/sfsu/csc780/chathub/ui/ImageUtil.java
+@@ -0,0 +1,90 @@
++package edu.sfsu.csc780.chathub.ui;
++
++import android.content.Context;
++import android.graphics.Bitmap;
++import android.net.Uri;
++import android.os.Environment;
++import android.provider.MediaStore;
++import android.util.Log;
++
++import java.io.File;
++import java.io.FileNotFoundException;
++import java.io.FileOutputStream;
++import java.io.IOException;
++import java.text.SimpleDateFormat;
++import java.util.Date;
++
++import static com.bumptech.glide.gifdecoder.GifHeaderParser.TAG;
++
++/**
++ * Created by bees on 10/4/17.
++ */
++
++public class ImageUtil {
++
++    public static final double MAX_LINEAR_DIMENSION = 500.0;
++    public static String IMAGE_FILE_PREFIX = "chathub-";
++
++    public static Bitmap scaleImage(Bitmap bitmap) {
++        int originalHeight = bitmap.getHeight();
++        int originalWidth = bitmap.getWidth();
++        double scaleFactor =  MAX_LINEAR_DIMENSION / (double)(originalHeight + originalWidth);
++
++        // We only want to scale down images, not scale upwards
++        if (scaleFactor < 1.0) {
++            int targetWidth = (int) Math.round(originalWidth * scaleFactor);
++            int targetHeight = (int) Math.round(originalHeight * scaleFactor);
++            return Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true);
++        } else {
++            return bitmap;
++        }
++    }
++
++    public static Uri savePhotoImage(Context context, Bitmap imageBitmap) {
++        File photoFile = null;
++        try {
++            photoFile = createImageFile(context);
++        } catch (IOException e) {
++            e.printStackTrace();
++        }
++        if (photoFile == null) {
++            Log.d(TAG, "Error creating media file");
++            return null;
++        }
++
++        try {
++            FileOutputStream fos = new FileOutputStream(photoFile);
++            imageBitmap.compress(Bitmap.CompressFormat.PNG, 90, fos);
++            fos.close();
++        } catch (FileNotFoundException e) {
++            Log.d(TAG, "File not found: " + e.getMessage());
++        } catch (IOException e) {
++            Log.d(TAG, "Error accessing file: " + e.getMessage());
++        }
++        return Uri.fromFile(photoFile);
++    }
++
++    public static File createImageFile(Context context) throws IOException {
++        // Create an image file name
++        String timeStamp = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
++        String imageFileNamePrefix = IMAGE_FILE_PREFIX + timeStamp;
++        File storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
++
++        File imageFile = File.createTempFile(
++                imageFileNamePrefix,    /* prefix */
++                ".jpg",                 /* suffix */
++                storageDir              /* directory */
++        );
++        return imageFile;
++    }
++
++    public static Bitmap getBitmapForUri(Context context, Uri imageUri) {
++        Bitmap bitmap = null;
++        try {
++            bitmap = MediaStore.Images.Media.getBitmap(context.getContentResolver(), imageUri);
++        } catch (IOException e) {
++            e.printStackTrace();
++        }
++        return bitmap;
++    }
++}
+diff --git a/app/src/main/java/edu/sfsu/csc780/chathub/ui/MainActivity.java b/app/src/main/java/edu/sfsu/csc780/chathub/ui/MainActivity.java
+index 216a622..f6f4f29 100644
+--- a/app/src/main/java/edu/sfsu/csc780/chathub/ui/MainActivity.java
++++ b/app/src/main/java/edu/sfsu/csc780/chathub/ui/MainActivity.java
+@@ -78,8 +78,7 @@ public class MainActivity extends AppCompatActivity
+     public static final int MSG_LENGTH_LIMIT = 10;
+     public static final String ANONYMOUS = "anonymous";
+     private static final int REQUEST_PICK_IMAGE = 1;
+-    private static final double MAX_LINEAR_DIMENSION = 500.0;
+-    private static String IMAGE_FILE_PREFIX = "chathub-";
++
+     private String mUsername;
+     private String mPhotoUrl;
+     private SharedPreferences mSharedPreferences;
+@@ -272,10 +271,10 @@ public class MainActivity extends AppCompatActivity
+                 Log.i(TAG, "Uri: " + uri.toString());
+ 
+                 // Resize if too big for messaging
+-                Bitmap bitmap = getBitmapForUri(uri);
+-                Bitmap resizedBitmap = scaleImage(bitmap);
++                Bitmap bitmap = ImageUtil.getBitmapForUri(this, uri);
++                Bitmap resizedBitmap = ImageUtil.scaleImage(bitmap);
+                 if (bitmap != resizedBitmap) {
+-                    uri = savePhotoImage(resizedBitmap);
++                    uri = ImageUtil.savePhotoImage(this, resizedBitmap);
+                 }
+ 
+                 createImageMessage(uri);
+@@ -309,68 +308,4 @@ public class MainActivity extends AppCompatActivity
+         });
+     }
+ 
+-    private Bitmap scaleImage(Bitmap bitmap) {
+-        int originalHeight = bitmap.getHeight();
+-        int originalWidth = bitmap.getWidth();
+-        double scaleFactor =  MAX_LINEAR_DIMENSION / (double)(originalHeight + originalWidth);
+-
+-        // We only want to scale down images, not scale upwards
+-        if (scaleFactor < 1.0) {
+-            int targetWidth = (int) Math.round(originalWidth * scaleFactor);
+-            int targetHeight = (int) Math.round(originalHeight * scaleFactor);
+-            return Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true);
+-        } else {
+-            return bitmap;
+-        }
+-    }
+-
+-    private Uri savePhotoImage(Bitmap imageBitmap) {
+-        File photoFile = null;
+-        try {
+-            photoFile = createImageFile();
+-        } catch (IOException e) {
+-            e.printStackTrace();
+-        }
+-        if (photoFile == null) {
+-            Log.d(TAG, "Error creating media file");
+-            return null;
+-        }
+-
+-        try {
+-            FileOutputStream fos = new FileOutputStream(photoFile);
+-            imageBitmap.compress(Bitmap.CompressFormat.PNG, 90, fos);
+-            fos.close();
+-        } catch (FileNotFoundException e) {
+-            Log.d(TAG, "File not found: " + e.getMessage());
+-        } catch (IOException e) {
+-            Log.d(TAG, "Error accessing file: " + e.getMessage());
+-        }
+-        return Uri.fromFile(photoFile);
+-    }
+-
+-    private File createImageFile() throws IOException {
+-        // Create an image file name
+-        String timeStamp = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
+-        String imageFileNamePrefix = IMAGE_FILE_PREFIX + timeStamp;
+-        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+-
+-        File imageFile = File.createTempFile(
+-                imageFileNamePrefix,    /* prefix */
+-                ".jpg",                 /* suffix */
+-                storageDir              /* directory */
+-        );
+-        return imageFile;
+-    }
+-
+-    private Bitmap getBitmapForUri(Uri imageUri) {
+-        Bitmap bitmap = null;
+-        try {
+-            bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
+-        } catch (IOException e) {
+-            e.printStackTrace();
+-        }
+-        return bitmap;
+-    }
+-
+-
+ }
+diff --git a/app/src/main/res/drawable/android_bigbox.png b/app/src/main/res/drawable/android_bigbox.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..17767a8d9919b84b2248d28d3de1553a1c0a904f
+GIT binary patch
+literal 27048
+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
+CXA{Bz
+
+literal 0
+HcmV?d00001
+
+diff --git a/app/src/main/res/drawable/android_smallbox.png b/app/src/main/res/drawable/android_smallbox.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..16bef0b248f846eacd7ee63b9446a6a4e5bcea12
+GIT binary patch
+literal 8614
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/app/src/test/java/edu/sfsu/csc780/chathub/ExampleUnitTest.java b/app/src/test/java/edu/sfsu/csc780/chathub/ExampleUnitTest.java
+new file mode 100644
+index 0000000..e679372
+--- /dev/null
++++ b/app/src/test/java/edu/sfsu/csc780/chathub/ExampleUnitTest.java
+@@ -0,0 +1,55 @@
++package edu.sfsu.csc780.chathub;
++
++import android.content.Context;
++import android.os.Environment;
++
++import org.junit.After;
++import org.junit.Test;
++import org.junit.runner.RunWith;
++import org.mockito.Mock;
++import org.mockito.junit.MockitoJUnitRunner;
++
++import java.io.File;
++
++import edu.sfsu.csc780.chathub.ui.ImageUtil;
++
++import static junit.framework.Assert.assertTrue;
++import static org.mockito.Mockito.when;
++
++/**
++ * Created by bees on 10/4/17.
++ */
++@RunWith(MockitoJUnitRunner.class)
++
++public class ExampleUnitTest {
++
++    private static final java.lang.String FAKE_EXTERNAL_FILES_DIR = "/";
++
++        @Mock
++        Context mMockContext;
++        private File mImageFile;
++
++    @Test
++
++    public void createImageFileVerification() throws Exception {
++        //TODO Implementation
++        when(mMockContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES))
++                .thenReturn(new File(getClass().getResource(FAKE_EXTERNAL_FILES_DIR).getPath()));
++
++        mImageFile = ImageUtil.createImageFile(mMockContext);
++
++        assertTrue(mImageFile != null);
++
++        assertTrue(mImageFile.exists());
++
++        assertTrue(mImageFile.getName().substring(0, 8)
++            .equalsIgnoreCase(ImageUtil.IMAGE_FILE_PREFIX));
++        }
++
++    @After
++    public void cleanup(){
++        if(mImageFile != null && mImageFile.exists()){
++            mImageFile.delete();
++        }
++    }
++}
+-- 
+2.7.4
+
