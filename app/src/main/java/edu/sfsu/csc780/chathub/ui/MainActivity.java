@@ -20,6 +20,7 @@ import android.app.LoaderManager;
 import android.content.Intent;
 import android.content.Loader;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -64,12 +65,16 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import edu.sfsu.csc780.chathub.LocationUtils;
+import edu.sfsu.csc780.chathub.MapLoader;
 import edu.sfsu.csc780.chathub.MessageUtil;
 import edu.sfsu.csc780.chathub.R;
 import edu.sfsu.csc780.chathub.model.ChatMessage;
 import edu.sfsu.csc780.chathub.ui.SignInActivity;
 
 import static com.bumptech.glide.gifdecoder.GifHeaderParser.TAG;
+import static edu.sfsu.csc780.chathub.ui.ImageUtil.savePhotoImage;
+import static edu.sfsu.csc780.chathub.ui.ImageUtil.scaleImage;
 
 public class MainActivity extends AppCompatActivity
         implements GoogleApiClient.OnConnectionFailedListener, MessageUtil.MessageLoadListener  {
@@ -91,6 +96,7 @@ public class MainActivity extends AppCompatActivity
     private LinearLayoutManager mLinearLayoutManager;
     private ProgressBar mProgressBar;
     private EditText mMessageEditText;
+    private MapLoader mapLoader;
 
     // Firebase instance variables
     private FirebaseAuth mAuth;
@@ -274,12 +280,27 @@ public class MainActivity extends AppCompatActivity
 
                     @Override
                     public Loader<Bitmap> onCreateLoader(final int id, final Bundle args){
-                        return null;
+                        return mapLoader;
                     }
 
                     @Override
                     public void onLoadFinished(final Loader<Bitmap> loader, final Bitmap result){
+                        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+                        mLocationButton.setEnabled(true);
 
+                        if (result == null) return;
+                        //Resize if too big for messaging
+                        Bitmap resizedBitmap = scaleImage(result);
+                        Uri uri= null;
+                        if (result != resizedBitmap) {
+                            uri = savePhotoImage(MainActivity.this, resizedBitmap);
+                        }
+
+                        else{
+                            uri = savePhotoImage(MainActivity.this, result);
+                        }
+
+                        createImageMessage(uri);
                     }
 
                     @Override
@@ -290,6 +311,17 @@ public class MainActivity extends AppCompatActivity
                 });
 
         loader.forceLoad();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, int[] grantResults, String permissions[]){ //Excluded permissions parameter
+
+        boolean isGranted = (grantResults.length > 0
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED);
+
+        if (isGranted && requestCode == LocationUtils.REQUEST_CODE) {
+            LocationUtils.startLocationUpdates(this);
+        }
     }
 
     @Override
@@ -309,9 +341,9 @@ public class MainActivity extends AppCompatActivity
 
                 // Resize if too big for messaging
                 Bitmap bitmap = ImageUtil.getBitmapForUri(this, uri);
-                Bitmap resizedBitmap = ImageUtil.scaleImage(bitmap);
+                Bitmap resizedBitmap = scaleImage(bitmap);
                 if (bitmap != resizedBitmap) {
-                    uri = ImageUtil.savePhotoImage(this, resizedBitmap);
+                    uri = savePhotoImage(this, resizedBitmap);
                 }
 
                 createImageMessage(uri);

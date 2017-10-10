@@ -19,7 +19,7 @@ import static com.bumptech.glide.gifdecoder.GifHeaderParser.TAG;
 public class LocationUtils {
     private static final long MIN_TIME = 5 * 1000;
     private static final long MIN_DISTANCE = 5;
-    private static final int REQUEST_CODE = 100;
+    public static final int REQUEST_CODE = 100;
     private static String FINE_LOCATION = android.Manifest.permission.ACCESS_FINE_LOCATION;
     private static String COARSE_LOCATION = android.Manifest.permission.ACCESS_COARSE_LOCATION;
     private static int GRANTED= PackageManager.PERMISSION_GRANTED;
@@ -32,7 +32,7 @@ public class LocationUtils {
         return (sLocation != null) ? sLocation.getLatitude() : 0.0;
     }
 
-    public static double getLong(){
+    public static double getLon(){
         return (sLocation != null) ? sLocation.getLongitude() : 0.0;
     }
 
