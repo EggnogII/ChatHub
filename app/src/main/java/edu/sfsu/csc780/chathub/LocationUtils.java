@@ -10,6 +10,8 @@ import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
+import edu.sfsu.csc780.chathub.ui.MainActivity;
+
 import static com.bumptech.glide.gifdecoder.GifHeaderParser.TAG;
 
 /**
@@ -17,9 +19,12 @@ import static com.bumptech.glide.gifdecoder.GifHeaderParser.TAG;
  */
 
 public class LocationUtils {
-    private static final long MIN_TIME = 5 * 1000;
-    private static final long MIN_DISTANCE = 5;
+    private static final long MIN_TIME = 1000;
+    private static final long MIN_DISTANCE = 10;
     public static final int REQUEST_CODE = 100;
+
+    public static final String LOG_TAG = "LOCATION_UTIL";
+
     private static String FINE_LOCATION = android.Manifest.permission.ACCESS_FINE_LOCATION;
     private static String COARSE_LOCATION = android.Manifest.permission.ACCESS_COARSE_LOCATION;
     private static int GRANTED= PackageManager.PERMISSION_GRANTED;
@@ -36,16 +41,16 @@ public class LocationUtils {
         return (sLocation != null) ? sLocation.getLongitude() : 0.0;
     }
 
-    public static void startLocationUpdates() {
+    public static void startLocationUpdates(Activity activity) {
         //Acquire a reference to the system Location Manager
         LocationManager locationManager =
-                (LocationManager) Activity.this.getSystemService(Context.LOCATION_SERVICE);
+                (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
 
         if (sLocationListener == null){
             //Define a listener that responds to location updates
             sLocationListener = new LocationListener() {
                 public void onLocationChanged(Location location) {
-                    Log.d(TAG, "lat: " + location.getLatitude()
+                    Log.d(LOG_TAG, "lat: " + location.getLatitude()
                     + "lon: " + location.getLongitude());
                     sLocation = location;
                 }
@@ -64,15 +69,15 @@ public class LocationUtils {
             };
         }
 
-        if (ActivityCompat.checkSelfPermission(Activity.this, FINE_LOCATION) !=
-                GRANTED && ActivityCompat.checkSelfPermission(Activity.this,
-                COARSE_LOCATION) != GRANTED) {{
-            Log.d(TAG, "requesting permissions for starting");
-            ActivityCompat.requestPermissions(Activity.this, LOCATION_PERMISSIONS, REQUEST_CODE);
+        if (ActivityCompat.checkSelfPermission(activity, FINE_LOCATION) !=
+                GRANTED && ActivityCompat.checkSelfPermission(activity,
+                COARSE_LOCATION) != GRANTED) {
+            Log.d(LOG_TAG, "requesting permissions for starting");
+            ActivityCompat.requestPermissions(activity, LOCATION_PERMISSIONS, REQUEST_CODE);
             return;
-            }
-        Log.d(TAG, "requesting updates");
         }
+        Log.d(LOG_TAG, "requesting updates");
+
 
         //Get updated Location
 
@@ -80,12 +85,12 @@ public class LocationUtils {
                 locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
         if (location != null) {
-            Log.d(TAG, "last known lat: " + location.getLatitude()
-            + "lon: " + location.getLongitude());
+            Log.d(LOG_TAG, "last known lat: " + location.getLatitude()
+            + " lon: " + location.getLongitude());
             sLocation = location;
         }
 
-        Log.d(TAG, "requesting updates");
+        Log.d(LOG_TAG, "requesting updates");
         locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME,
                 MIN_DISTANCE, sLocationListener);
 

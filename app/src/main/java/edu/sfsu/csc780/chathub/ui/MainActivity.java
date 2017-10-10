@@ -16,9 +16,12 @@
 package edu.sfsu.csc780.chathub.ui;
 
 import android.app.Activity;
-import android.app.LoaderManager;
+//import android.app.LoaderManager;
+import android.support.v4.app.LoaderManager.LoaderCallbacks;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.Loader;
 import android.content.Intent;
-import android.content.Loader;
+//import android.content.Loader;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -275,12 +278,13 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void loadMap() {
+
         Loader<Bitmap> loader = getSupportLoaderManager().initLoader(0, null,
                 new LoaderManager.LoaderCallbacks<Bitmap>() {
 
                     @Override
                     public Loader<Bitmap> onCreateLoader(final int id, final Bundle args){
-                        return mapLoader;
+                        return new MapLoader(MainActivity.this);
                     }
 
                     @Override
@@ -313,7 +317,7 @@ public class MainActivity extends AppCompatActivity
         loader.forceLoad();
     }
 
-    @Override
+    //@Override
     public void onRequestPermissionsResult(int requestCode, int[] grantResults, String permissions[]){ //Excluded permissions parameter
 
         boolean isGranted = (grantResults.length > 0
@@ -340,10 +344,10 @@ public class MainActivity extends AppCompatActivity
                 Log.i(TAG, "Uri: " + uri.toString());
 
                 // Resize if too big for messaging
-                Bitmap bitmap = ImageUtil.getBitmapForUri(this, uri);
+                Bitmap bitmap = ImageUtil.getBitmapForUri(MainActivity.this, uri);
                 Bitmap resizedBitmap = scaleImage(bitmap);
                 if (bitmap != resizedBitmap) {
-                    uri = savePhotoImage(this, resizedBitmap);
+                    uri = savePhotoImage(MainActivity.this, resizedBitmap);
                 }
 
                 createImageMessage(uri);
