@@ -19,6 +19,7 @@ import static com.bumptech.glide.gifdecoder.GifHeaderParser.TAG;
  */
 
 public class LocationUtils {
+    //private final Context mContext;
     private static final long MIN_TIME = 1000;
     private static final long MIN_DISTANCE = 10;
     public static final int REQUEST_CODE = 100;
@@ -33,15 +34,36 @@ public class LocationUtils {
     private static Location sLocation;
     private static LocationListener sLocationListener;
 
+    private static double latitude;
+    private static double longitude;
+
+    /*
+    public LocationUtils(Context context){
+        this.mContext = context;
+        startLocationUpdates(mContext);
+    }
+    */
+
     public static double getLat(){
-        return (sLocation != null) ? sLocation.getLatitude() : 0.0;
+        if(sLocation != null)
+        {
+            latitude = sLocation.getLatitude();
+        }
+
+        return latitude;
     }
 
     public static double getLon(){
-        return (sLocation != null) ? sLocation.getLongitude() : 0.0;
+        if (sLocation != null)
+        {
+            longitude = sLocation.getLongitude();
+        }
+
+        return longitude;
     }
 
     public static void startLocationUpdates(Activity activity) {
+
         //Acquire a reference to the system Location Manager
         LocationManager locationManager =
                 (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);

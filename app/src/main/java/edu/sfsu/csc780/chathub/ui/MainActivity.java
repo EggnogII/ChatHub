@@ -317,8 +317,8 @@ public class MainActivity extends AppCompatActivity
         loader.forceLoad();
     }
 
-    //@Override
-    public void onRequestPermissionsResult(int requestCode, int[] grantResults, String permissions[]){ //Excluded permissions parameter
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults){
 
         boolean isGranted = (grantResults.length > 0
                 && grantResults[0] == PackageManager.PERMISSION_GRANTED);
