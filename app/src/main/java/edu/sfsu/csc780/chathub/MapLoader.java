@@ -33,8 +33,11 @@ public class MapLoader extends AsyncTaskLoader<Bitmap> {
     @Override
     public Bitmap loadInBackground() {
 
-        double lat = LocationUtils.getLat();
-        double lon = LocationUtils.getLon();
+        //double lat = LocationUtils.getLat();
+        //double lon = LocationUtils.getLon();
+
+        double lat = GPSTracker.getLatitude();
+        double lon = GPSTracker.getLongitude();
 
         StringBuilder urlBuilder= new StringBuilder("https://maps.google" +
             ".com/maps/api/staticmap?center=");

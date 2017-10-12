@@ -44,6 +44,7 @@ public class LocationUtils {
     }
     */
 
+
     public static double getLat(){
         if(sLocation != null)
         {
@@ -62,6 +63,7 @@ public class LocationUtils {
         return longitude;
     }
 
+
     public static void startLocationUpdates(Activity activity) {
 
         //Acquire a reference to the system Location Manager
@@ -71,6 +73,7 @@ public class LocationUtils {
         if (sLocationListener == null){
             //Define a listener that responds to location updates
             sLocationListener = new LocationListener() {
+
                 public void onLocationChanged(Location location) {
                     Log.d(LOG_TAG, "lat: " + location.getLatitude()
                     + "lon: " + location.getLongitude());

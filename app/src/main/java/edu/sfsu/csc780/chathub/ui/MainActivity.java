@@ -68,6 +68,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import edu.sfsu.csc780.chathub.GPSTracker;
 import edu.sfsu.csc780.chathub.LocationUtils;
 import edu.sfsu.csc780.chathub.MapLoader;
 import edu.sfsu.csc780.chathub.MessageUtil;
@@ -323,8 +324,9 @@ public class MainActivity extends AppCompatActivity
         boolean isGranted = (grantResults.length > 0
                 && grantResults[0] == PackageManager.PERMISSION_GRANTED);
 
-        if (isGranted && requestCode == LocationUtils.REQUEST_CODE) {
-            LocationUtils.startLocationUpdates(this);
+        if (isGranted && requestCode == GPSTracker.REQUEST_CODE) {
+            //LocationUtils.startLocationUpdates(this);
+            GPSTracker gps = new GPSTracker(MainActivity.this);
         }
     }
 
